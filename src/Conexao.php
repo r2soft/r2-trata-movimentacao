@@ -1,16 +1,15 @@
 <?php
 
 
-namespace R2Soft\VMovimentacao;
 
+namespace R2Soft\VMovimentacao;
 /*
   * Constantes de parâmetros para configuração da conexão
   */
 define('HOST', 'localhost');
-define('DBNAME', 'DB');
-define('CHARSET', 'utf8');
-define('USER', 'root');
-define('PASSWORD', '123456');
+define('DBNAME', 'r2app_lusah');
+define('USER', 'postgres');
+define('PASSWORD', 'root');
 
 class Conexao {
 
@@ -26,16 +25,17 @@ class Conexao {
         //
     }
 
-    /*
+    /**
      * Método estático para retornar uma conexão válida
      * Verifica se já existe uma instância da conexão, caso não, configura uma nova conexão
+     * @var $pdo \PDO
      */
     public static function getInstance() {
         if (!isset(self::$pdo)) {
             try {
-                $opcoes = array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES UTF8', PDO::ATTR_PERSISTENT => TRUE);
-                self::$pdo = new PDO("mysql:host=" . HOST . "; dbname=" . DBNAME . "; charset=" . CHARSET . ";", USER, PASSWORD, $opcoes);
-            } catch (PDOException $e) {
+                self::$pdo = new \PDO("pgsql:host=" . HOST . "; dbname=" . DBNAME . "; ",USER, PASSWORD);
+
+            } catch (\PDOException $e) {
                 print "Erro: " . $e->getMessage();
             }
         }

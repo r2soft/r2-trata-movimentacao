@@ -1,6 +1,9 @@
 <?php
-namespace App\Helpers;
-use Illuminate\Support\Facades\DB;
+namespace R2Soft\VMovimentacao;
+//use Illuminate\Support\Facades\DB;
+//use R2Soft\VMovimentacao\Conexao;
+include __DIR__.'/r2data.php';
+include __DIR__.'/price.php';
 
 class trataVMovimentacao
 {
@@ -95,7 +98,11 @@ class trataVMovimentacao
         if ($vendaId == null){
             return 'Venda id não informada';
         }
-        $resultado = DB::select ("select movimentacao_gerada_id from nucleo.movimentacaoagrupadas where movimentacaoagrupadas.venda_id = {$vendaId} and ativo = true");
+
+        $conn = Conexao::getInstance();
+        $stmt = $conn->prepare('select movimentacao_gerada_id from nucleo.movimentacaoagrupadas where movimentacaoagrupadas.venda_id = :vendaId and ativo = true');
+        $stmt->execute(['vendaId' => $vendaId]);
+        $resultado = $stmt->fetchAll();
 
         if (empty($resultado[0]))
             return null;
@@ -415,10 +422,13 @@ class trataVMovimentacao
 
     public function setDadosDaVenda($vendaId)
     {
-        $dados = DB::select ("select termos_antecipados, juro_aplicado from nucleo.vendasloteamentos where venda_id = $vendaId");
+        $conn = Conexao::getInstance();
+        $stmt = $conn->prepare('select termos_antecipados, juro_aplicado from nucleo.vendasloteamentos where venda_id = :vendaId');
+        $stmt->execute(array('vendaId' => $vendaId));
+        $dados = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         if (empty($this->dadosDaVenda)) {
-            $this->dadosDaVenda['juro_aplicado'] = ($dados[0]->juro_aplicado / 100);
-            $this->dadosDaVenda['termos_antecipados'] = $dados[0]->termos_antecipados;
+            $this->dadosDaVenda['juro_aplicado'] = ($dados[0]['juro_aplicado'] / 100);
+            $this->dadosDaVenda['termos_antecipados'] = $dados[0]['termos_antecipados'];
             $this->agrupadas = $this->getAgrupadas($vendaId);
             $this->agrupadasId = $this->getAgrupadasId($vendaId);
             $this->ordemAgrupamentos = $this->getOrdemAgrupamentos();
@@ -430,8 +440,11 @@ class trataVMovimentacao
         if ($vendaId == null){
             return 'Venda id não informada';
         }
+        $conn = Conexao::getInstance();
+        $stmt = $conn->prepare('select * from nucleo.movimentacaoagrupadas where venda_id = :vendaId and ativo = true');
+        $stmt->execute(['vendaId' => $vendaId]);
+        $resultado = $stmt->fetchAll();
 
-        $resultado = DB::select ("select * from nucleo.movimentacaoagrupadas where venda_id = $vendaId and ativo = true");
         if (empty($resultado[0])){
             return null;
         }else{
@@ -442,8 +455,11 @@ class trataVMovimentacao
         if ($vendaId == null){
             return 'Venda id não informada';
         }
-        $resultado = DB::select ("select movimentacao_agrupada from nucleo.movimentacaoagrupadas where movimentacaoagrupadas.venda_id = {$vendaId}");
 
+        $conn = Conexao::getInstance();
+        $stmt = $conn->prepare('select movimentacao_agrupada from nucleo.movimentacaoagrupadas where movimentacaoagrupadas.venda_id = :vendaId');
+        $stmt->execute(['vendaId' => $vendaId]);
+        $resultado = $stmt->fetchAll();
 
         if (empty($resultado[0])){
             return null;

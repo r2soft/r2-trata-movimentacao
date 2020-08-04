@@ -23,7 +23,7 @@
     },
     "autoload": {
         "psr-4": {
-            "R2Soft\\trata-vmovimentacao\\": "src/"
+            "R2Soft\\VMovimentacao\\": "src/"
         }
     }
 }

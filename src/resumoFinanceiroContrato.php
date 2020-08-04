@@ -1,7 +1,11 @@
 <?php
-namespace App\Helpers;
+namespace R2Soft\VMovimentacao;
 
-use Illuminate\Support\Facades\DB;
+
+use PDO;
+
+include __DIR__.'/Conexao.php';
+include __DIR__.'/trataVMovimentacao.php';
 
 class resumoFinanceiroContrato
 {
@@ -12,17 +16,17 @@ class resumoFinanceiroContrato
 
     public function __construct($vendaId)
     {
-        $tipoParcelas = DB::select ("select id from nucleo.tipo_parcelas where identificacao in (1,2,3,4,6,10)");
-        $tipoParcelaArray=[];
-        foreach ($tipoParcelas as $index => $tipoParcela) {
-            $tipoParcelaArray[]=$tipoParcela->id;
-        }
 
+        $conn = Conexao::getInstance();
+        $stmt = $conn->prepare('select id from nucleo.tipo_parcelas where identificacao in (1,2,3,4,6,10)');
+        $stmt->execute ();
+        $tipoParcelas = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        $tipoParcelasId = join (',', $tipoParcelas);
         $this->trataVMovimentacaoR = new trataVMovimentacao();
 
-
-        $tipoParcelasId = join (',',$tipoParcelaArray);
-        $this->movimentacoes = DB::select ("select * from nucleo.v_movimentacoes WHERE venda_id = $vendaId and  tipo_movimentacao != 'movsaida' and tipo_parcela_id in($tipoParcelasId) ");
+        $stmt = $conn->prepare("select * from nucleo.v_movimentacoes WHERE venda_id = $vendaId and  tipo_movimentacao != 'movsaida' and tipo_parcela_id in($tipoParcelasId) ");
+        $stmt->execute ();
+        $this->movimentacoes = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $this->processaDados();
     }
 
@@ -62,7 +66,4 @@ class resumoFinanceiroContrato
     {
         return $this->trataVMovimentacaoR->getValorAReceber();
     }
-
-
-
 }
