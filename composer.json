@@ -1,0 +1,29 @@
+{    
+	"name": "r2soft/trata-vmovimentacao",
+	"description":"R2 Soft - Package Catgory",
+	"license": "MIT",
+	"keywords": [
+		"laravel",
+		"repository",
+		"criteria"
+	],
+	"authors":[
+		{
+			"name":"Ricardo de Paula Coelho",
+			"email": "ricardo@r2soft.com.br"
+		},
+		{
+			"name":"R2 Soft - Informática e Softwares Ltda-ME",
+			"email": "r2soft@r2soft.com.br"			
+		}
+	],
+	"homepage": "https://www.r2soft.com.br/",
+    "require": {
+      "php": ">=5.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "R2Soft\\trata-vmovimentacao\\": "src/"
+        }
+    }
+}
