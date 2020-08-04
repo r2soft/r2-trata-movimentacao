@@ -31,7 +31,7 @@ class TrataVMovimentacao
     private function theMovementWasPassed()
     {
         if (empty($this->movimentacao))
-            throw new Exception("Você deve passar uma movimentacao! exemplo: trataMovimentacao::setMovimentacao()");
+            throw new \Exception("Você deve passar uma movimentacao! exemplo: trataMovimentacao::setMovimentacao()");
         return true;
     }
 
@@ -40,7 +40,7 @@ class TrataVMovimentacao
         if (isset($movimentacao['VMovimentacao']))
             $this->movimentacao = $movimentacao['VMovimentacao'];
         else
-            throw new Exception("Dados incorretos! a Movimentacao deve ter a chave 'VMovimentacao'");
+            throw new \Exception("Dados incorretos! a Movimentacao deve ter a chave 'VMovimentacao'");
 
         if (!$this->r2data instanceof r2data)
             $this->r2data = new r2data();
@@ -97,7 +97,7 @@ class TrataVMovimentacao
 
         $conn = Conexao::getInstance();
         $stmt = $conn->prepare('select movimentacao_gerada_id from nucleo.movimentacaoagrupadas where movimentacaoagrupadas.venda_id = :vendaId and ativo = true');
-        $stmt->execute(['vendaId' => $vendaId]);
+        $stmt->execute(array('vendaId' => $vendaId));
         $resultado = $stmt->fetchAll();
 
         if (empty($resultado[0]))
@@ -116,7 +116,7 @@ class TrataVMovimentacao
         try {
             if ($this->theMovementWasPassed())
                 return $this->movimentacao['dias_atraso'];
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return $e;
         }
     }
@@ -129,7 +129,7 @@ class TrataVMovimentacao
                     return $this->movimentacao['juro'];
                 }
             return 0;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return $e;
         }
     }
@@ -153,7 +153,7 @@ class TrataVMovimentacao
                 }
                 return $this->movimentacao['valor_pago'];
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return $e;
         }
     }
@@ -245,7 +245,7 @@ class TrataVMovimentacao
         if ($this->movimentacao['data_vencimento'] != $this->movimentacao['vencimento_original']) {
             return $ptBr ? $this->r2data->converteData($this->movimentacao['data_vencimento']) : $this->movimentacao['data_vencimento'];
         }
-        return $ptBr ? $this->r2data->converteData($this->movimentacao['vencimento_original']) : $this->movimentacao['vencimento_original'];;
+        return $ptBr ? $this->r2data->converteData($this->movimentacao['vencimento_original']) : $this->movimentacao['vencimento_original'];
     }
 
     public function getVencimentoOriginal($ptBr = true)
@@ -335,7 +335,6 @@ class TrataVMovimentacao
         $this->valorAtrasadas['multa'] += $this->movimentacao['multa_calculada'];
         $this->valorAtrasadas['juro_sem_multa'] += (float) $juro - (float)$this->movimentacao['multa_calculada'];
         $this->valorAtrasadas['valor_com_juro'] += $this->movimentacao['valor'] + $juro;
-//        $this->valorAtrasadas['valor_com_juro'] += $this->movimentacao['valor'] + $juro + $this->movimentacao['multa_calculada'];
         $this->valorAtrasadas['quantidade'] += 1;
         $this->JuroMultaAtrasadas += $juro;
         $this->valorParaQuitacao['valor_sem_juro'] += $this->movimentacao['valor'] + $this->getJuroRemanescente();
@@ -438,15 +437,13 @@ class TrataVMovimentacao
         $this->arrayIdMovPaiAgrupadas = $this->getIdMovimentacoesPaiAgupradas($vendaId);
     }
 
-
-
     private function getJsonDosIdMovimentacoesAgupradas($vendaId = null){
         if ($vendaId == null){
             return 'Venda id não informada';
         }
         $conn = Conexao::getInstance();
         $stmt = $conn->prepare('select * from nucleo.movimentacaoagrupadas where venda_id = :vendaId and ativo = true');
-        $stmt->execute(['vendaId' => $vendaId]);
+        $stmt->execute(array('vendaId' => $vendaId));
         $resultado = $stmt->fetchAll();
 
         if (empty($resultado[0])){
@@ -455,14 +452,15 @@ class TrataVMovimentacao
             return $resultado;
         }
     }
-    private function getOrdemMovimentacoesAgupradas($vendaId = null){
+    private function getOrdemMovimentacoesAgupradas($vendaId = null)
+    {
         if ($vendaId == null){
             return 'Venda id não informada';
         }
 
         $conn = Conexao::getInstance();
         $stmt = $conn->prepare('select movimentacao_agrupada from nucleo.movimentacaoagrupadas where movimentacaoagrupadas.venda_id = :vendaId');
-        $stmt->execute(['vendaId' => $vendaId]);
+        $stmt->execute(array('vendaId' => $vendaId));
         $resultado = $stmt->fetchAll();
 
         if (empty($resultado[0])){
