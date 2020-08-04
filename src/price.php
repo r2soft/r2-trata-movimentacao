@@ -1,5 +1,9 @@
 <?php
+
+
 namespace R2Soft\VMovimentacao;
+
+
 class price {
 
     public function getValorDaParcela($valorPresente, $juro, $quantidadeDeParcelas) {

@@ -2,7 +2,8 @@
 
 
 
-namespace R2Soft\VMovimentacao;
+namespace R2Soft\VMovimentacao\DB;
+
 /*
   * Constantes de parâmetros para configuração da conexão
   */

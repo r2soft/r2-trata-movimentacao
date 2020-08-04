@@ -1,6 +1,11 @@
 <?php
-require_once "src/resumoFinanceiroContrato.php";
-$resumoFinanceiro = new \R2Soft\VMovimentacao\resumoFinanceiroContrato(11);
+
+require_once  'vendor/autoload.php';
+
+use \R2Soft\VMovimentacao\ResumoFinanceiroContrato;
+
+$resumoFinanceiro = new ResumoFinanceiroContrato(11);
+
 
 $valorAReceber = $resumoFinanceiro->getValorAReceber();
 $valorParaQuitacao = $resumoFinanceiro->getValorParaQuitacao();

@@ -1,13 +1,10 @@
 <?php
+
 namespace R2Soft\VMovimentacao;
-
-
 use PDO;
+use R2Soft\VMovimentacao\DB\Conexao;
 
-include __DIR__.'/Conexao.php';
-include __DIR__.'/trataVMovimentacao.php';
-
-class resumoFinanceiroContrato
+class ResumoFinanceiroContrato
 {
     private $movimentacoes;
     private $movimentacoesDiversas;
@@ -16,7 +13,6 @@ class resumoFinanceiroContrato
 
     public function __construct($vendaId)
     {
-
         $conn = Conexao::getInstance();
         $stmt = $conn->prepare('select id from nucleo.tipo_parcelas where identificacao in (1,2,3,4,6,10)');
         $stmt->execute ();

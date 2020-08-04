@@ -1,9 +1,9 @@
 <?php
+
 namespace R2Soft\VMovimentacao;
-//use Illuminate\Support\Facades\DB;
-//use R2Soft\VMovimentacao\Conexao;
-include __DIR__.'/r2data.php';
-include __DIR__.'/price.php';
+
+
+use R2Soft\VMovimentacao\DB\Conexao;
 
 class trataVMovimentacao
 {
@@ -26,7 +26,7 @@ class trataVMovimentacao
     private $valorAtrasadas = array('quantidade' => 0, 'valor_sem_juro' => 0, 'juro' => 0, 'valor_com_juro' => 0, 'desconto' => 0, 'multa'=>0, 'juro_sem_multa'=>0);
     private $valorQuitadas = array('quantidade' => 0, 'valor_sem_juro' => 0, 'juro' => 0, 'valor_com_juro' => 0, 'desconto' => 0);
     private $valorNoPrazo = array('quantidade' => 0, 'valor_sem_juro' => 0, 'juro' => 0, 'valor_com_juro' => 0, 'desconto' => 0);
-    private $valorParaQuitacao = 0;
+    private $valorParaQuitacao = array('valor_sem_juro'=>0, 'valor_com_juro'=>0);
     private $JuroMultaAtrasadas=0;
 
     private function theMovementWasPassed()
@@ -38,8 +38,6 @@ class trataVMovimentacao
 
     public function setMovimentacao($movimentacao)
     {
-
-
         if (isset($movimentacao['VMovimentacao']))
             $this->movimentacao = $movimentacao['VMovimentacao'];
         else
@@ -58,7 +56,6 @@ class trataVMovimentacao
 
     private function getAgrupadas($vendaId)
     {
-
         $agrupadasJson = $this->getJsonDosIdMovimentacoesAgupradas($vendaId);
 
         $agrupadas = array();
@@ -145,7 +142,8 @@ class trataVMovimentacao
                 if (empty($this->movimentacao['data_credito'])) {
                     $juro = 0;
                     if ($this->getJuroRemanescente() > 0) {
-                        $juro = $this->getJuroRemanescente() + $this->getJuroDaParcelaVencida() + $this->getValorMulta();
+//                        $juro = $this->getJuroRemanescente() + $this->getJuroDaParcelaVencida() + $this->getValorMulta();
+                        $juro = $this->getJuroRemanescente() + $this->getJuroDaParcelaVencida();
                     } elseif ($this->movimentacao['juro'] <= 0) {
                         $juro = $this->movimentacao['juro'] + $this->getJuroDaParcelaVencida() + $this->movimentacao['multa_calculada'];
                     } else
@@ -177,17 +175,21 @@ class trataVMovimentacao
                 if ($this->dadosDaVenda['termos_antecipados']) {
                     $periodos = $this->r2data->getPeriodosTermosAntecipados($this->movimentacao['data_vencimento']);
                     $valor = $this->price->getValorPresenteDaParcela($this->movimentacao['valor'], $this->dadosDaVenda['juro_aplicado'], $periodos);
+                    $this->valorParaQuitacao['valor_sem_juro'] += $valor;
                     $valor += $this->movimentacao['juro'] + $this->movimentacao['desconto'];
                 } else {
                     if ($this->getDiasAtraso() > -31) {
                         $valor = $this->movimentacao['valor'] + $this->movimentacao['juro'] + $this->movimentacao['desconto'];
+                        $this->valorParaQuitacao['valor_sem_juro'] += $valor;
                     } else {
                         $periodos = $this->r2data->getPeriodosTermosVencidos($this->movimentacao['data_vencimento']);
                         $valor = $this->price->getValorPresenteDaParcela($this->movimentacao['valor'], $this->dadosDaVenda['juro_aplicado'], $periodos);
+                        $this->valorParaQuitacao['valor_sem_juro'] += $valor;
                         $valor += $this->movimentacao['juro'] + $this->movimentacao['desconto'];
                     }
                 }
                 $this->setValorNoPrazo();
+                $this->valorParaQuitacao['valor_com_juro'] += $valor;
 
             } else {
                 $this->setValorQuitadas();
@@ -204,7 +206,6 @@ class trataVMovimentacao
             }
         }
     }
-
 
     private function getJuroDaParcelaVencida()
     {
@@ -335,9 +336,11 @@ class trataVMovimentacao
         $this->valorAtrasadas['multa'] += $this->movimentacao['multa_calculada'];
         $this->valorAtrasadas['juro_sem_multa'] += (float) $juro - (float)$this->movimentacao['multa_calculada'];
         $this->valorAtrasadas['valor_com_juro'] += $this->movimentacao['valor'] + $juro;
+//        $this->valorAtrasadas['valor_com_juro'] += $this->movimentacao['valor'] + $juro + $this->movimentacao['multa_calculada'];
         $this->valorAtrasadas['quantidade'] += 1;
-        $this->valorParaQuitacao += $this->movimentacao['valor'] + $juro;
         $this->JuroMultaAtrasadas += $juro;
+        $this->valorParaQuitacao['valor_sem_juro'] += $this->movimentacao['valor'] + $this->getJuroRemanescente();
+        $this->valorParaQuitacao['valor_com_juro'] += $this->movimentacao['valor'] + $juro;
     }
 
     /**
@@ -365,14 +368,11 @@ class trataVMovimentacao
      */
     private function setValorNoPrazo()
     {
-
         $this->valorNoPrazo['valor_sem_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'] + $this->getJuroRemanescente();
         $this->valorNoPrazo['juro'] += $this->movimentacao['juro'];
         $this->valorNoPrazo['desconto'] += $this->movimentacao['desconto'];
         $this->valorNoPrazo['valor_com_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'] + $this->movimentacao['juro'];
         $this->valorNoPrazo['quantidade'] += 1;
-      $this->valorParaQuitacao += $this->movimentacao['valor'] + $this->movimentacao['desconto'] + $this->movimentacao['juro'];
-        $this->JuroMultaAtrasadas += ($this->movimentacao['valor'] + $this->movimentacao['desconto'] + $this->movimentacao['juro'])-($this->movimentacao['valor'] + $this->movimentacao['desconto'] + $this->getJuroRemanescente());
     }
 
     /**
@@ -426,15 +426,20 @@ class trataVMovimentacao
         $stmt = $conn->prepare('select termos_antecipados, juro_aplicado from nucleo.vendasloteamentos where venda_id = :vendaId');
         $stmt->execute(array('vendaId' => $vendaId));
         $dados = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        if (empty($this->dadosDaVenda)) {
+
+        $this->dadosDaVenda['juro_aplicado']=0;
+        $this->dadosDaVenda['termos_antecipados']=false;
+        if (empty($this->dadosDaVenda) && !empty($dados)) {
             $this->dadosDaVenda['juro_aplicado'] = ($dados[0]['juro_aplicado'] / 100);
             $this->dadosDaVenda['termos_antecipados'] = $dados[0]['termos_antecipados'];
-            $this->agrupadas = $this->getAgrupadas($vendaId);
-            $this->agrupadasId = $this->getAgrupadasId($vendaId);
-            $this->ordemAgrupamentos = $this->getOrdemAgrupamentos();
-            $this->arrayIdMovPaiAgrupadas = $this->getIdMovimentacoesPaiAgupradas($vendaId);
         }
+        $this->agrupadas = $this->getAgrupadas($vendaId);
+        $this->agrupadasId = $this->getAgrupadasId($vendaId);
+        $this->ordemAgrupamentos = $this->getOrdemAgrupamentos();
+        $this->arrayIdMovPaiAgrupadas = $this->getIdMovimentacoesPaiAgupradas($vendaId);
     }
+
+
 
     private function getJsonDosIdMovimentacoesAgupradas($vendaId = null){
         if ($vendaId == null){
@@ -477,6 +482,10 @@ class trataVMovimentacao
     public function setNullMovimentacao()
     {
         $this->movimentacao = null;
+    }
 
+    public function getMoraDiaCalculada()
+    {
+        return $this->movimentacao['mora_dia_calculada'];
     }
 }
