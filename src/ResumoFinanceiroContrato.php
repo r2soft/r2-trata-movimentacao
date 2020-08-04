@@ -15,13 +15,14 @@ class ResumoFinanceiroContrato
     {
         $conn = Conexao::getInstance();
         $stmt = $conn->prepare('select id from nucleo.tipo_parcelas where identificacao in (1,2,3,4,6,10)');
-        $stmt->execute ();
+        $stmt->execute();
         $tipoParcelas = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
         $tipoParcelasId = join (',', $tipoParcelas);
-        $this->trataVMovimentacaoR = new trataVMovimentacao();
+        $this->trataVMovimentacaoR = new TrataVMovimentacao();
 
         $stmt = $conn->prepare("select * from nucleo.v_movimentacoes WHERE venda_id = $vendaId and  tipo_movimentacao != 'movsaida' and tipo_parcela_id in($tipoParcelasId) ");
-        $stmt->execute ();
+        $stmt->execute();
         $this->movimentacoes = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $this->processaDados();
     }
