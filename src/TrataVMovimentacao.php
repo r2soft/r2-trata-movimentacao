@@ -2,10 +2,9 @@
 
 namespace R2Soft\VMovimentacao;
 
-
 use R2Soft\VMovimentacao\DB\Conexao;
 
-class trataVMovimentacao
+class TrataVMovimentacao
 {
 
     private $movimentacao;
