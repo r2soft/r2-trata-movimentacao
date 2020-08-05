@@ -7,21 +7,22 @@ use R2Soft\VMovimentacao\DB\Conexao;
 class ResumoFinanceiroContrato
 {
     private $movimentacoes;
-    private $movimentacoesDiversas;
-    private $trataVMovimentacaoR;
+    private $trataVMovimentacaoR=null;
+    private $tipoParcelasId=null;
 
 
     public function __construct($vendaId)
     {
         $conn = Conexao::getInstance();
-        $stmt = $conn->prepare('select id from nucleo.tipo_parcelas where identificacao in (1,2,3,4,6,10)');
-        $stmt->execute();
-        $tipoParcelas = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-        $tipoParcelasId = join (',', $tipoParcelas);
-        $this->trataVMovimentacaoR = new TrataVMovimentacao();
-
-        $stmt = $conn->prepare("select * from nucleo.v_movimentacoes WHERE venda_id = $vendaId and  tipo_movimentacao != 'movsaida' and tipo_parcela_id in($tipoParcelasId) ");
+        if(empty($this->tipoParcelasId)){
+            $stmt = $conn->prepare('select id from nucleo.tipo_parcelas where identificacao in (1,2,3,4,6,10)');
+            $stmt->execute();
+            $tipoParcelas = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            $this->tipoParcelasId = join (',', $tipoParcelas);
+        }
+        if(empty($this->trataVMovimentacaoR))
+            $this->trataVMovimentacaoR = new TrataVMovimentacao();
+        $stmt = $conn->prepare("select * from nucleo.v_movimentacoes WHERE venda_id = $vendaId and  tipo_movimentacao != 'movsaida' and tipo_parcela_id in($this->tipoParcelasId) ");
         $stmt->execute();
         $this->movimentacoes = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $this->processaDados();

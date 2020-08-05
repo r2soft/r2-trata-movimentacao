@@ -27,6 +27,10 @@ class TrataVMovimentacao
     private $valorNoPrazo = array('quantidade' => 0, 'valor_sem_juro' => 0, 'juro' => 0, 'valor_com_juro' => 0, 'desconto' => 0);
     private $valorParaQuitacao = array('valor_sem_juro'=>0, 'valor_com_juro'=>0);
     private $JuroMultaAtrasadas=0;
+    private $vendaIdAtual=array();
+    private $jsonAgrupadas=array();
+    private $ordemMovimentacoesAgrupadas=array();
+    private $movimentacoesPaiAgupradas=array();
 
     private function theMovementWasPassed()
     {
@@ -94,21 +98,22 @@ class TrataVMovimentacao
         if ($vendaId == null){
             return 'Venda id não informada';
         }
-
-        $conn = Conexao::getInstance();
-        $stmt = $conn->prepare('select movimentacao_gerada_id from nucleo.movimentacaoagrupadas where movimentacaoagrupadas.venda_id = :vendaId and ativo = true');
-        $stmt->execute(array('vendaId' => $vendaId));
-        $resultado = $stmt->fetchAll();
-
-        if (empty($resultado[0]))
-            return null;
-
-        $tratados=null;
-        foreach ($resultado as $key=>$item){
-            $tratados[$key]=$item->movimentacao_gerada_id;
+        if(empty($this->movimentacoesPaiAgupradas[$vendaId])){
+            $conn = Conexao::getInstance();
+            $stmt = $conn->prepare('select movimentacao_gerada_id from nucleo.movimentacaoagrupadas where movimentacaoagrupadas.venda_id = :vendaId and ativo = true');
+            $stmt->execute(array('vendaId' => $vendaId));
+            $resultado = $stmt->fetchAll();
+            if (empty($resultado[0])){
+                $this->movimentacoesPaiAgupradas[$vendaId]=1;
+                return null;
+            }
+            $tratados=null;
+            foreach ($resultado as $key=>$item){
+                $tratados[$key]=$item->movimentacao_gerada_id;
+            }
+            $this->movimentacoesPaiAgupradas[$vendaId]=$tratados;
         }
-        return $tratados;
-
+        return $this->movimentacoesPaiAgupradas[$vendaId];
     }
 
     public function getDiasAtraso()
@@ -418,16 +423,19 @@ class TrataVMovimentacao
 
     public function setDadosDaVenda($vendaId)
     {
-        $conn = Conexao::getInstance();
-        $stmt = $conn->prepare('select termos_antecipados, juro_aplicado from nucleo.vendasloteamentos where venda_id = :vendaId');
-        $stmt->execute(array('vendaId' => $vendaId));
-        $dados = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        if (empty($dados)) {
+        if(empty($this->vendaIdAtual[$vendaId])){
+            $conn = Conexao::getInstance();
+            $stmt = $conn->prepare('select termos_antecipados, juro_aplicado from nucleo.vendasloteamentos where venda_id = :vendaId');
+            $stmt->execute(array('vendaId' => $vendaId));
+            $dados = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $this->vendaIdAtual[$vendaId]=$dados;
+        }
+        if (empty($this->vendaIdAtual[$vendaId])) {
             $this->dadosDaVenda['juro_aplicado']=0;
             $this->dadosDaVenda['termos_antecipados']=false;
         }else{
-            $this->dadosDaVenda['juro_aplicado'] = ($dados[0]['juro_aplicado'] / 100);
-            $this->dadosDaVenda['termos_antecipados'] = $dados[0]['termos_antecipados'];
+            $this->dadosDaVenda['juro_aplicado'] = ($this->vendaIdAtual[$vendaId][0]['juro_aplicado'] / 100);
+            $this->dadosDaVenda['termos_antecipados'] = $this->vendaIdAtual[$vendaId][0]['termos_antecipados'];
         }
         $this->agrupadas = $this->getAgrupadas($vendaId);
         $this->agrupadasId = $this->getAgrupadasId($vendaId);
@@ -439,15 +447,17 @@ class TrataVMovimentacao
         if ($vendaId == null){
             return 'Venda id não informada';
         }
-        $conn = Conexao::getInstance();
-        $stmt = $conn->prepare('select * from nucleo.movimentacaoagrupadas where venda_id = :vendaId and ativo = true');
-        $stmt->execute(array('vendaId' => $vendaId));
-        $resultado = $stmt->fetchAll();
-
-        if (empty($resultado[0])){
+        if(empty($this->jsonAgrupadas[$vendaId])){
+            $conn = Conexao::getInstance();
+            $stmt = $conn->prepare('select * from nucleo.movimentacaoagrupadas where venda_id = :vendaId and ativo = true');
+            $stmt->execute(array('vendaId' => $vendaId));
+            $this->jsonAgrupadas[$vendaId] = $stmt->fetchAll();
+        }
+        if (empty($this->jsonAgrupadas[$vendaId][0])){
+            $this->jsonAgrupadas[$vendaId]=1;
             return null;
         }else{
-            return $resultado;
+            return $this->jsonAgrupadas[$vendaId];
         }
     }
     private function getOrdemMovimentacoesAgupradas($vendaId = null)
@@ -455,23 +465,25 @@ class TrataVMovimentacao
         if ($vendaId == null){
             return 'Venda id não informada';
         }
-
-        $conn = Conexao::getInstance();
-        $stmt = $conn->prepare('select movimentacao_agrupada from nucleo.movimentacaoagrupadas where movimentacaoagrupadas.venda_id = :vendaId');
-        $stmt->execute(array('vendaId' => $vendaId));
-        $resultado = $stmt->fetchAll();
-
-        if (empty($resultado[0])){
-            return null;
-        }else{
-            $tratados=null;
-            foreach ($resultado as $key=>$dados){
-                foreach (json_decode($dados->movimentacao_agrupada,true) as $value=>$item){
-                    $tratados[$value]=($key+1);
+        if(empty($this->ordemMovimentacoesAgrupadas[$vendaId])){
+            $conn = Conexao::getInstance();
+            $stmt = $conn->prepare('select movimentacao_agrupada from nucleo.movimentacaoagrupadas where movimentacaoagrupadas.venda_id = :vendaId');
+            $stmt->execute(array('vendaId' => $vendaId));
+            $resultado = $stmt->fetchAll();
+            if (empty($resultado[0])){
+                $this->ordemMovimentacoesAgrupadas[$vendaId]=1;
+                return null;
+            }else{
+                $tratados=null;
+                foreach ($resultado as $key=>$dados){
+                    foreach (json_decode($dados->movimentacao_agrupada,true) as $value=>$item){
+                        $tratados[$value]=($key+1);
+                    }
                 }
+                $this->ordemMovimentacoesAgrupadas[$vendaId] = $tratados;
             }
-            return $tratados;
         }
+        return $this->ordemMovimentacoesAgrupadas[$vendaId];
     }
 
     public function setNullMovimentacao()
