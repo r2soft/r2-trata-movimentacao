@@ -7,10 +7,7 @@ namespace R2Soft\VMovimentacao\DB;
 /*
   * Constantes de parâmetros para configuração da conexão
   */
-define('HOST', 'localhost');
-define('DBNAME', 'r2app_lusah');
-define('USER', 'postgres');
-define('PASSWORD', 'root');
+
 
 class Conexao {
 
@@ -18,6 +15,11 @@ class Conexao {
      * Atributo estático para instância do PDO
      */
     private static $pdo;
+
+    public static $host = '';
+    public static $dbName = '';
+    public static $user = '';
+    public static $password = '';
 
     /*
      * Escondendo o construtor da classe
@@ -34,7 +36,8 @@ class Conexao {
     public static function getInstance() {
         if (!isset(self::$pdo)) {
             try {
-                self::$pdo = new \PDO("pgsql:host=" . HOST . "; dbname=" . DBNAME . "; ",USER, PASSWORD);
+
+                self::$pdo = new \PDO("pgsql:host=" . self::$host . "; dbname=" . self::$dbName . "; ",self::$user, self::$password);
 
             } catch (\PDOException $e) {
                 print "Erro: " . $e->getMessage();
