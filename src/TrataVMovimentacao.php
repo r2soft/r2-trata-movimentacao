@@ -60,7 +60,7 @@ class TrataVMovimentacao
         $agrupadas = array();
         if (!empty($agrupadasJson)) {
             foreach ($agrupadasJson as $agrupadaJson) {
-                $aux = json_decode($agrupadaJson->movimentacao_agrupada, true);
+                $aux = json_decode($agrupadaJson['movimentacao_agrupada'], true);
                 $agrupadas = array_merge($agrupadas, $aux);
             }
         }
@@ -73,7 +73,7 @@ class TrataVMovimentacao
         $agrupadasId = array();
         if (!empty($agrupadasJson)) {
             foreach ($agrupadasJson as $agrupadaJson) {
-                $agrupadas = json_decode($agrupadaJson->movimentacao_agrupada, true);
+                $agrupadas = json_decode($agrupadaJson['movimentacao_agrupada'], true);
                 foreach ($agrupadas as $index => $agrupada) {
                     $agrupadasId[$index] = $index;
                 }
@@ -105,7 +105,7 @@ class TrataVMovimentacao
 
         $tratados=null;
         foreach ($resultado as $key=>$item){
-            $tratados[$key]=$item->movimentacao_gerada_id;
+            $tratados[$key]=$item['movimentacao_gerada_id'];
         }
         return $tratados;
 
@@ -468,7 +468,7 @@ class TrataVMovimentacao
         }else{
             $tratados=null;
             foreach ($resultado as $key=>$dados){
-                foreach (json_decode($dados->movimentacao_agrupada,true) as $value=>$item){
+                foreach (json_decode($dados['movimentacao_agrupada'],true) as $value=>$item){
                     $tratados[$value]=($key+1);
                 }
             }
