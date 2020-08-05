@@ -141,14 +141,12 @@ class TrataVMovimentacao
                 if (empty($this->movimentacao['data_credito'])) {
                     $juro = 0;
                     if ($this->getJuroRemanescente() > 0) {
-//                        $juro = $this->getJuroRemanescente() + $this->getJuroDaParcelaVencida() + $this->getValorMulta();
                         $juro = $this->getJuroRemanescente() + $this->getJuroDaParcelaVencida();
                     } elseif ($this->movimentacao['juro'] <= 0) {
                         $juro = $this->movimentacao['juro'] + $this->getJuroDaParcelaVencida() + $this->movimentacao['multa_calculada'];
                     } else
                         $juro = $this->movimentacao['juro'] + $this->getJuroDaParcelaVencida();
                     $this->setValorAtrasadas($juro);
-
                     return $this->movimentacao['valor'] + $juro;
                 }
                 return $this->movimentacao['valor_pago'];
@@ -424,10 +422,10 @@ class TrataVMovimentacao
         $stmt = $conn->prepare('select termos_antecipados, juro_aplicado from nucleo.vendasloteamentos where venda_id = :vendaId');
         $stmt->execute(array('vendaId' => $vendaId));
         $dados = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-
-        $this->dadosDaVenda['juro_aplicado']=0;
-        $this->dadosDaVenda['termos_antecipados']=false;
-        if (empty($this->dadosDaVenda) && !empty($dados)) {
+        if (empty($dados)) {
+            $this->dadosDaVenda['juro_aplicado']=0;
+            $this->dadosDaVenda['termos_antecipados']=false;
+        }else{
             $this->dadosDaVenda['juro_aplicado'] = ($dados[0]['juro_aplicado'] / 100);
             $this->dadosDaVenda['termos_antecipados'] = $dados[0]['termos_antecipados'];
         }
