@@ -62,9 +62,10 @@ class TrataVMovimentacao
         $agrupadasJson = $this->getJsonDosIdMovimentacoesAgupradas($vendaId);
 
         $agrupadas = array();
+
         if (!empty($agrupadasJson)) {
             foreach ($agrupadasJson as $agrupadaJson) {
-                $aux = json_decode($agrupadaJson->movimentacao_agrupada, true);
+                $aux = json_decode($agrupadaJson['movimentacao_agrupada'], true);
                 $agrupadas = array_merge($agrupadas, $aux);
             }
         }
@@ -77,7 +78,7 @@ class TrataVMovimentacao
         $agrupadasId = array();
         if (!empty($agrupadasJson)) {
             foreach ($agrupadasJson as $agrupadaJson) {
-                $agrupadas = json_decode($agrupadaJson->movimentacao_agrupada, true);
+                $agrupadas = json_decode($agrupadaJson['movimentacao_agrupada'], true);
                 foreach ($agrupadas as $index => $agrupada) {
                     $agrupadasId[$index] = $index;
                 }
@@ -102,14 +103,14 @@ class TrataVMovimentacao
             $conn = Conexao::getInstance();
             $stmt = $conn->prepare('select movimentacao_gerada_id from nucleo.movimentacaoagrupadas where movimentacaoagrupadas.venda_id = :vendaId and ativo = true');
             $stmt->execute(array('vendaId' => $vendaId));
-            $resultado = $stmt->fetchAll();
+            $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             if (empty($resultado[0])){
                 $this->movimentacoesPaiAgupradas[$vendaId]=1;
                 return null;
             }
             $tratados=null;
             foreach ($resultado as $key=>$item){
-                $tratados[$key]=$item->movimentacao_gerada_id;
+                $tratados[$key]=$item['movimentacao_gerada_id'];
             }
             $this->movimentacoesPaiAgupradas[$vendaId]=$tratados;
         }
@@ -451,7 +452,7 @@ class TrataVMovimentacao
             $conn = Conexao::getInstance();
             $stmt = $conn->prepare('select * from nucleo.movimentacaoagrupadas where venda_id = :vendaId and ativo = true');
             $stmt->execute(array('vendaId' => $vendaId));
-            $this->jsonAgrupadas[$vendaId] = $stmt->fetchAll();
+            $this->jsonAgrupadas[$vendaId] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         }
         if (empty($this->jsonAgrupadas[$vendaId][0])){
             $this->jsonAgrupadas[$vendaId]=1;
@@ -469,14 +470,14 @@ class TrataVMovimentacao
             $conn = Conexao::getInstance();
             $stmt = $conn->prepare('select movimentacao_agrupada from nucleo.movimentacaoagrupadas where movimentacaoagrupadas.venda_id = :vendaId');
             $stmt->execute(array('vendaId' => $vendaId));
-            $resultado = $stmt->fetchAll();
+            $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             if (empty($resultado[0])){
                 $this->ordemMovimentacoesAgrupadas[$vendaId]=1;
                 return null;
             }else{
                 $tratados=null;
                 foreach ($resultado as $key=>$dados){
-                    foreach (json_decode($dados->movimentacao_agrupada,true) as $value=>$item){
+                    foreach (json_decode($dados['movimentacao_agrupada'],true) as $value=>$item){
                         $tratados[$value]=($key+1);
                     }
                 }
