@@ -22,15 +22,16 @@ class TrataVMovimentacao
     private $valorAtualizadoTotal = 0;
     private $valorDescontoTotal = 0;
     private $valorJuroAtualizadoTotal = 0;
-    private $valorAtrasadas = array('quantidade' => 0, 'valor_sem_juro' => 0, 'juro' => 0, 'valor_com_juro' => 0, 'desconto' => 0, 'multa'=>0, 'juro_sem_multa'=>0);
+    private $multaTotal = 0;
+    private $valorAtrasadas = array('quantidade' => 0, 'valor_sem_juro' => 0, 'juro' => 0, 'valor_com_juro' => 0, 'desconto' => 0, 'multa' => 0, 'juro_sem_multa' => 0);
     private $valorQuitadas = array('quantidade' => 0, 'valor_sem_juro' => 0, 'juro' => 0, 'valor_com_juro' => 0, 'desconto' => 0);
     private $valorNoPrazo = array('quantidade' => 0, 'valor_sem_juro' => 0, 'juro' => 0, 'valor_com_juro' => 0, 'desconto' => 0);
-    private $valorParaQuitacao = array('valor_sem_juro'=>0, 'valor_com_juro'=>0);
-    private $JuroMultaAtrasadas=0;
-    private $vendaIdAtual=array();
-    private $jsonAgrupadas=array();
-    private $ordemMovimentacoesAgrupadas=array();
-    private $movimentacoesPaiAgupradas=array();
+    private $valorParaQuitacao = array('valor_sem_juro' => 0, 'valor_com_juro' => 0);
+    private $JuroMultaAtrasadas = 0;
+    private $vendaIdAtual = array();
+    private $jsonAgrupadas = array();
+    private $ordemMovimentacoesAgrupadas = array();
+    private $movimentacoesPaiAgupradas = array();
 
     private function theMovementWasPassed()
     {
@@ -54,6 +55,7 @@ class TrataVMovimentacao
         $this->valorAtualizadoTotal += $this->getValorDaMovimentacaoAtualizado();
         $this->valorDescontoTotal += $this->getDesconto();
         $this->valorJuroAtualizadoTotal += $this->getJuroAtualizado();
+        $this->multaTotal += $this->getValorMulta();
         $this->valorTotal += $this->getValor();
     }
 
@@ -94,25 +96,25 @@ class TrataVMovimentacao
         return $ordemAgrupamento;
     }
 
-    private function getIdMovimentacoesPaiAgupradas($vendaId=null)
+    private function getIdMovimentacoesPaiAgupradas($vendaId = null)
     {
-        if ($vendaId == null){
+        if ($vendaId == null) {
             return 'Venda id não informada';
         }
-        if(empty($this->movimentacoesPaiAgupradas[$vendaId])){
+        if (empty($this->movimentacoesPaiAgupradas[$vendaId])) {
             $conn = Conexao::getInstance();
             $stmt = $conn->prepare('select movimentacao_gerada_id from nucleo.movimentacaoagrupadas where movimentacaoagrupadas.venda_id = :vendaId and ativo = true');
             $stmt->execute(array('vendaId' => $vendaId));
             $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            if (empty($resultado[0])){
-                $this->movimentacoesPaiAgupradas[$vendaId]=1;
+            if (empty($resultado[0])) {
+                $this->movimentacoesPaiAgupradas[$vendaId] = 1;
                 return null;
             }
-            $tratados=null;
-            foreach ($resultado as $key=>$item){
-                $tratados[$key]=$item['movimentacao_gerada_id'];
+            $tratados = null;
+            foreach ($resultado as $key => $item) {
+                $tratados[$key] = $item['movimentacao_gerada_id'];
             }
-            $this->movimentacoesPaiAgupradas[$vendaId]=$tratados;
+            $this->movimentacoesPaiAgupradas[$vendaId] = $tratados;
         }
         return $this->movimentacoesPaiAgupradas[$vendaId];
     }
@@ -147,11 +149,11 @@ class TrataVMovimentacao
                 if (empty($this->movimentacao['data_credito'])) {
                     $juro = 0;
                     if ($this->getJuroRemanescente() > 0) {
-                        $juro = $this->getJuroRemanescente() + $this->getJuroDaParcelaVencida()+$this->movimentacao['desconto'];
+                        $juro = $this->getJuroRemanescente() + $this->getJuroDaParcelaVencida() + $this->movimentacao['desconto'];
                     } elseif ($this->movimentacao['juro'] <= 0) {
-                        $juro = $this->movimentacao['juro'] + $this->getJuroDaParcelaVencida() + $this->movimentacao['multa_calculada']+$this->movimentacao['desconto'];
+                        $juro = $this->movimentacao['juro'] + $this->getJuroDaParcelaVencida() + $this->movimentacao['multa_calculada'] + $this->movimentacao['desconto'];
                     } else
-                        $juro = $this->movimentacao['juro'] + $this->getJuroDaParcelaVencida()+$this->movimentacao['desconto'];
+                        $juro = $this->movimentacao['juro'] + $this->getJuroDaParcelaVencida() + $this->movimentacao['desconto'];
                     $this->setValorAtrasadas($juro);
                     return $this->movimentacao['valor'] + $juro;
                 }
@@ -269,13 +271,10 @@ class TrataVMovimentacao
 
     public function getJuroAtualizado()
     {
-        if ($this->movimentacao['juro'] <= 0){
-            if($this->movimentacao['dias_atraso']>0)
-                return $this->movimentacao['juro'] + $this->movimentacao['juro_total'] + $this->movimentacao['multa_calculada'];
-            else
-                return $this->movimentacao['juro'] + $this->movimentacao['juro_total'];
+        if ($this->movimentacao['juro'] <= 0) {
+            return $this->movimentacao['juro'] + $this->movimentacao['juro_total'];
         }
-        return $this->movimentacao['juro'] + $this->movimentacao['juro_total'];
+        return $this->movimentacao['juro'] + $this->movimentacao['juro_total'] - $this->movimentacao['multa_calculada'];
     }
 
     public function getValorAtualizadoTotal()
@@ -338,14 +337,14 @@ class TrataVMovimentacao
      */
     private final function setValorAtrasadas($juro)
     {
-        $this->valorAtrasadas['valor_sem_juro'] += $this->movimentacao['valor']+$this->movimentacao['desconto'];
+        $this->valorAtrasadas['valor_sem_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'];
         $this->valorAtrasadas['juro'] += $juro;
         $this->valorAtrasadas['multa'] += $this->movimentacao['multa_calculada'];
-        $this->valorAtrasadas['juro_sem_multa'] += (float) $juro - (float)$this->movimentacao['multa_calculada'];
+        $this->valorAtrasadas['juro_sem_multa'] += (float)$juro - (float)$this->movimentacao['multa_calculada'];
         $this->valorAtrasadas['valor_com_juro'] += $this->movimentacao['valor'] + $juro;
         $this->valorAtrasadas['quantidade'] += 1;
         $this->JuroMultaAtrasadas += $juro;
-        $this->valorParaQuitacao['valor_sem_juro'] += $this->movimentacao['valor'] +$this->movimentacao['desconto'];
+        $this->valorParaQuitacao['valor_sem_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'];
         $this->valorParaQuitacao['valor_com_juro'] += $this->movimentacao['valor'] + $juro;
     }
 
@@ -428,17 +427,17 @@ class TrataVMovimentacao
 
     public function setDadosDaVenda($vendaId)
     {
-        if(empty($this->vendaIdAtual[$vendaId])){
+        if (empty($this->vendaIdAtual[$vendaId])) {
             $conn = Conexao::getInstance();
             $stmt = $conn->prepare('select termos_antecipados, juro_aplicado from nucleo.vendasloteamentos where venda_id = :vendaId');
             $stmt->execute(array('vendaId' => $vendaId));
             $dados = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            $this->vendaIdAtual[$vendaId]=$dados;
+            $this->vendaIdAtual[$vendaId] = $dados;
         }
         if (empty($this->vendaIdAtual[$vendaId])) {
-            $this->dadosDaVenda['juro_aplicado']=0;
-            $this->dadosDaVenda['termos_antecipados']=false;
-        }else{
+            $this->dadosDaVenda['juro_aplicado'] = 0;
+            $this->dadosDaVenda['termos_antecipados'] = false;
+        } else {
             $this->dadosDaVenda['juro_aplicado'] = ($this->vendaIdAtual[$vendaId][0]['juro_aplicado'] / 100);
             $this->dadosDaVenda['termos_antecipados'] = $this->vendaIdAtual[$vendaId][0]['termos_antecipados'];
         }
@@ -448,41 +447,43 @@ class TrataVMovimentacao
         $this->arrayIdMovPaiAgrupadas = $this->getIdMovimentacoesPaiAgupradas($vendaId);
     }
 
-    private function getJsonDosIdMovimentacoesAgupradas($vendaId = null){
-        if ($vendaId == null){
+    private function getJsonDosIdMovimentacoesAgupradas($vendaId = null)
+    {
+        if ($vendaId == null) {
             return 'Venda id não informada';
         }
-        if(empty($this->jsonAgrupadas[$vendaId])){
+        if (empty($this->jsonAgrupadas[$vendaId])) {
             $conn = Conexao::getInstance();
             $stmt = $conn->prepare('select * from nucleo.movimentacaoagrupadas where venda_id = :vendaId and ativo = true');
             $stmt->execute(array('vendaId' => $vendaId));
             $this->jsonAgrupadas[$vendaId] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         }
-        if (empty($this->jsonAgrupadas[$vendaId][0])){
-            $this->jsonAgrupadas[$vendaId]=1;
+        if (empty($this->jsonAgrupadas[$vendaId][0])) {
+            $this->jsonAgrupadas[$vendaId] = 1;
             return null;
-        }else{
+        } else {
             return $this->jsonAgrupadas[$vendaId];
         }
     }
+
     private function getOrdemMovimentacoesAgupradas($vendaId = null)
     {
-        if ($vendaId == null){
+        if ($vendaId == null) {
             return 'Venda id não informada';
         }
-        if(empty($this->ordemMovimentacoesAgrupadas[$vendaId])){
+        if (empty($this->ordemMovimentacoesAgrupadas[$vendaId])) {
             $conn = Conexao::getInstance();
             $stmt = $conn->prepare('select movimentacao_agrupada from nucleo.movimentacaoagrupadas where movimentacaoagrupadas.venda_id = :vendaId');
             $stmt->execute(array('vendaId' => $vendaId));
             $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            if (empty($resultado[0])){
-                $this->ordemMovimentacoesAgrupadas[$vendaId]=1;
+            if (empty($resultado[0])) {
+                $this->ordemMovimentacoesAgrupadas[$vendaId] = 1;
                 return null;
-            }else{
-                $tratados=null;
-                foreach ($resultado as $key=>$dados){
-                    foreach (json_decode($dados['movimentacao_agrupada'],true) as $value=>$item){
-                        $tratados[$value]=($key+1);
+            } else {
+                $tratados = null;
+                foreach ($resultado as $key => $dados) {
+                    foreach (json_decode($dados['movimentacao_agrupada'], true) as $value => $item) {
+                        $tratados[$value] = ($key + 1);
                     }
                 }
                 $this->ordemMovimentacoesAgrupadas[$vendaId] = $tratados;
@@ -499,5 +500,10 @@ class TrataVMovimentacao
     public function getMoraDiaCalculada()
     {
         return $this->movimentacao['mora_dia_calculada'];
+    }
+
+    public function getMultaTotal()
+    {
+        return $this->multaTotal;
     }
 }
