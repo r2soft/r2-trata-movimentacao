@@ -189,7 +189,7 @@ class TrataVMovimentacao
                     } else {
                         $periodos = $this->r2data->getPeriodosTermosVencidos($this->movimentacao['data_vencimento']);
                         $valor = $this->price->getValorPresenteDaParcela($this->movimentacao['valor'], $this->dadosDaVenda['juro_aplicado'], $periodos);
-                        $this->valorParaQuitacao['valor_sem_juro'] += $valor;
+                        $this->valorParaQuitacao['valor_sem_juro'] += $valor+ $this->movimentacao['desconto'];
                         $valor += $this->movimentacao['juro'] + $this->movimentacao['desconto'];
                     }
                 }
