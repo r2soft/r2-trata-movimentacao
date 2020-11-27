@@ -175,7 +175,8 @@ class TrataVMovimentacao
 
     private function getValorSeMovimentacaoDeReceita()
     {
-        if ($this->movimentacao['identificacao'] == 1 || $this->movimentacao['identificacao'] == 4) {
+        if ($this->movimentacao['identificacao'] == 1 || $this->movimentacao['identificacao'] == 2 ||
+            $this->movimentacao['identificacao'] == 3 || $this->movimentacao['identificacao'] == 4) {
             if (empty($this->movimentacao['data_credito'])) {
                 if ($this->dadosDaVenda['termos_antecipados']) {
                     $periodos = $this->r2data->getPeriodosTermosAntecipados($this->movimentacao['data_vencimento']);
