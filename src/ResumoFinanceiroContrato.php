@@ -22,7 +22,7 @@ class ResumoFinanceiroContrato
         }
         if(empty($this->trataVMovimentacaoR))
             $this->trataVMovimentacaoR = new TrataVMovimentacao();
-        $stmt = $conn->prepare("select * from nucleo.v_movimentacoes WHERE venda_id = $vendaId and  tipo_movimentacao != 'movsaida' and tipo_parcela_id in($this->tipoParcelasId) ");
+        $stmt = $conn->prepare("select * from nucleo.v_movimentacoes_resumo_financiero WHERE venda_id = $vendaId and  tipo_movimentacao != 'movsaida' and tipo_parcela_id in($this->tipoParcelasId) ");
         $stmt->execute();
         $this->movimentacoes = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $this->processaDados();

@@ -59,12 +59,9 @@ class TrataVMovimentacao
         $this->valorTotal += $this->getValor();
     }
 
-    private function getAgrupadas($vendaId)
+    private function getAgrupadas($agrupadasJson)
     {
-        $agrupadasJson = $this->getJsonDosIdMovimentacoesAgupradas($vendaId);
-
         $agrupadas = array();
-
         if (!empty($agrupadasJson)) {
             foreach ($agrupadasJson as $agrupadaJson) {
                 $aux = json_decode($agrupadaJson['movimentacao_agrupada'], true);
@@ -74,9 +71,8 @@ class TrataVMovimentacao
         return $agrupadas;
     }
 
-    private function getAgrupadasId($vendaId)
+    private function getAgrupadasId($agrupadasJson)
     {
-        $agrupadasJson = $this->getJsonDosIdMovimentacoesAgupradas($vendaId);
         $agrupadasId = array();
         if (!empty($agrupadasJson)) {
             foreach ($agrupadasJson as $agrupadaJson) {
@@ -442,8 +438,9 @@ class TrataVMovimentacao
             $this->dadosDaVenda['juro_aplicado'] = ($this->vendaIdAtual[$vendaId][0]['juro_aplicado'] / 100);
             $this->dadosDaVenda['termos_antecipados'] = $this->vendaIdAtual[$vendaId][0]['termos_antecipados'];
         }
-        $this->agrupadas = $this->getAgrupadas($vendaId);
-        $this->agrupadasId = $this->getAgrupadasId($vendaId);
+        $agrupadasJson = $this->getJsonDosIdMovimentacoesAgupradas($vendaId);
+        $this->agrupadas = $this->getAgrupadas($agrupadasJson);
+        $this->agrupadasId = $this->getAgrupadasId($agrupadasJson);
         $this->ordemAgrupamentos = $this->getOrdemAgrupamentos();
         $this->arrayIdMovPaiAgrupadas = $this->getIdMovimentacoesPaiAgupradas($vendaId);
     }
