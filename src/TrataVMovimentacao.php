@@ -171,6 +171,8 @@ class TrataVMovimentacao
 
     private function getValorSeMovimentacaoDeReceita()
     {
+        
+        
         if ($this->movimentacao['identificacao'] == 1 || $this->movimentacao['identificacao'] == 2 ||
             $this->movimentacao['identificacao'] == 3 || $this->movimentacao['identificacao'] == 4) {
             if (empty($this->movimentacao['data_credito'])) {
@@ -185,7 +187,16 @@ class TrataVMovimentacao
                         $this->valorParaQuitacao['valor_sem_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'];
                     } else {
                         $periodos = $this->r2data->getPeriodosTermosVencidos($this->movimentacao['data_vencimento']);
-                        $valor = $this->price->getValorPresenteDaParcela($this->movimentacao['valor'], $this->dadosDaVenda['juro_aplicado'], $periodos);
+                        if($_SESSION['Auth']['User']['empresa_id'] == 211){                            
+                            $mip = $this->movimentacao['valor']*0.025052;
+                            $adm = $this->movimentacao['valor']*0.00926;
+                            $this->movimentacao['valor'] = $this->movimentacao['valor']-$mip-$adm;
+                            $valor = $this->price->getValorPresenteDaParcela($this->movimentacao['valor'], $this->dadosDaVenda['juro_aplicado'], $periodos);
+                            $this->movimentacao['valor'] = $this->movimentacao['valor']+$mip+$adm;
+                        }else{                            
+                            $valor = $this->price->getValorPresenteDaParcela($this->movimentacao['valor'], $this->dadosDaVenda['juro_aplicado'], $periodos);
+                        }
+                        
                         $this->valorParaQuitacao['valor_sem_juro'] += $valor+ $this->movimentacao['desconto'];
                         $valor += $this->movimentacao['juro'] + $this->movimentacao['desconto'];
                     }
@@ -426,17 +437,22 @@ class TrataVMovimentacao
     {
         if (empty($this->vendaIdAtual[$vendaId])) {
             $conn = Conexao::getInstance();
-            $stmt = $conn->prepare('select termos_antecipados, juro_aplicado from nucleo.vendasloteamentos where venda_id = :vendaId');
+            $stmt = $conn->prepare('select termos_antecipados, juro_aplicado, valor_venda_sem_juro from nucleo.vendasloteamentos where venda_id = :vendaId');
             $stmt->execute(array('vendaId' => $vendaId));
             $dados = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             $this->vendaIdAtual[$vendaId] = $dados;
+            $this->dadosDaVenda['valor_venda_sem_juro'] = $this->vendaIdAtual[$vendaId][0]['valor_venda_sem_juro'];
+            $this->dadosDaVenda['mip'] = $this->movimentacao['valor']*0.025052;
+            $this->dadosDaVenda['adm'] = $this->movimentacao['valor']*0.00926;
+            
+            
         }
         if (empty($this->vendaIdAtual[$vendaId])) {
             $this->dadosDaVenda['juro_aplicado'] = 0;
             $this->dadosDaVenda['termos_antecipados'] = false;
         } else {
             $this->dadosDaVenda['juro_aplicado'] = ($this->vendaIdAtual[$vendaId][0]['juro_aplicado'] / 100);
-            $this->dadosDaVenda['termos_antecipados'] = $this->vendaIdAtual[$vendaId][0]['termos_antecipados'];
+            $this->dadosDaVenda['termos_antecipados'] = $this->vendaIdAtual[$vendaId][0]['termos_antecipados'];            
         }
         $agrupadasJson = $this->getJsonDosIdMovimentacoesAgupradas($vendaId);
         $this->agrupadas = $this->getAgrupadas($agrupadasJson);
