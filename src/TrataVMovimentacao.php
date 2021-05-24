@@ -32,6 +32,7 @@ class TrataVMovimentacao
     private $jsonAgrupadas = array();
     private $ordemMovimentacoesAgrupadas = array();
     private $movimentacoesPaiAgupradas = array();
+    private $empresaId = null;
 
     private function theMovementWasPassed()
     {
@@ -187,7 +188,7 @@ class TrataVMovimentacao
                         $this->valorParaQuitacao['valor_sem_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'];
                     } else {
                         $periodos = $this->r2data->getPeriodosTermosVencidos($this->movimentacao['data_vencimento']);
-                        if($_SESSION['Auth']['User']['empresa_id'] == 211){                            
+                        if($this->empresaId == 211){                            
                             $mip = $this->movimentacao['valor']*0.025052;
                             $adm = $this->movimentacao['valor']*0.00926;
                             $this->movimentacao['valor'] = $this->movimentacao['valor']-$mip-$adm;
@@ -437,11 +438,12 @@ class TrataVMovimentacao
     {
         if (empty($this->vendaIdAtual[$vendaId])) {
             $conn = Conexao::getInstance();
-            $stmt = $conn->prepare('select termos_antecipados, juro_aplicado, valor_venda_sem_juro from nucleo.vendasloteamentos where venda_id = :vendaId');
+            $stmt = $conn->prepare('select termos_antecipados, juro_aplicado, valor_venda_sem_juro, empresa_id from nucleo.vendasloteamentos INNER JOIN nucleo.vendas ON (nucleo.vendasloteamentos.venda_id = nucleo.vendas.id) where venda_id = :vendaId');
             $stmt->execute(array('vendaId' => $vendaId));
             $dados = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             $this->vendaIdAtual[$vendaId] = $dados;
             $this->dadosDaVenda['valor_venda_sem_juro'] = $this->vendaIdAtual[$vendaId][0]['valor_venda_sem_juro'];
+            $this->empresaId = $this->vendaIdAtual[$vendaId][0]['empresa_id'];            
             $this->dadosDaVenda['mip'] = $this->movimentacao['valor']*0.025052;
             $this->dadosDaVenda['adm'] = $this->movimentacao['valor']*0.00926;
             
