@@ -517,7 +517,6 @@ class TrataVMovimentacao
     {
         return $this->movimentacao['mora_dia_calculada'];
     }
-
     public function getMultaTotal()
     {
         return $this->multaTotal;
