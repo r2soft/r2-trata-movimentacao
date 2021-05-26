@@ -442,11 +442,20 @@ class TrataVMovimentacao
             $stmt->execute(array('vendaId' => $vendaId));
             $dados = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             $this->vendaIdAtual[$vendaId] = $dados;
-            $this->dadosDaVenda['valor_venda_sem_juro'] = $this->vendaIdAtual[$vendaId][0]['valor_venda_sem_juro'];
-            $this->empresaId = $this->vendaIdAtual[$vendaId][0]['empresa_id'];            
-            $this->dadosDaVenda['mip'] = $this->movimentacao['valor']*0.025052;
-            $this->dadosDaVenda['adm'] = $this->movimentacao['valor']*0.00926;
-            
+
+            if(!empty($this->vendaIdAtual[$vendaId])){
+                $this->dadosDaVenda['valor_venda_sem_juro'] = $this->vendaIdAtual[$vendaId][0]['valor_venda_sem_juro'];
+            }else{
+                $this->dadosDaVenda['valor_venda_sem_juro'] = 0;
+            }
+
+            $stmt = $conn->prepare('SELECT id FROM nucleo.empresas');
+            $stmt->execute();
+            $empresa = $stmt->fetch(\PDO::FETCH_ASSOC );
+            $this->empresaId = $empresa['id'];
+
+            $this->dadosDaVenda['mip'] = $this->movimentacao['valor'] * 0.025052;
+            $this->dadosDaVenda['adm'] = $this->movimentacao['valor'] * 0.00926;
             
         }
         if (empty($this->vendaIdAtual[$vendaId])) {
