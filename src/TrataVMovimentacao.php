@@ -350,7 +350,7 @@ class TrataVMovimentacao
     /**
      * @param float[] $juro
      */
-    private final function setValorAtrasadas($juro)
+    protected final function setValorAtrasadas($juro)
     {
         $atualizacao = $this->getAtualizacao();
         $this->valorAtrasadas['valor_sem_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'];
