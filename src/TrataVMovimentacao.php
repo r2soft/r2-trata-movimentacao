@@ -540,6 +540,52 @@ class TrataVMovimentacao
     private function getAtualizacao(){
         switch ($this->empresaId){
             case 556:
+                $conn = Conexao::getInstance();
+
+                if($this->movimentacao['id']==1432244)
+                {
+                    $now = new \DateTime('now');
+                    $nowM = $now->format('m');
+                    $dateVencimento = $this->movimentacao['data_vencimento'];
+                    if(strstr($this->movimentacao['data_vencimento'], '/'))
+                        $dateVencimento = $this->r2data->converteData($this->movimentacao['data_vencimento']);
+                    $dateVencimento = new \DateTime($dateVencimento);
+                    debug($dateVencimento);
+                    exit;
+                    $dateVencimentoM = $dateVencimento->format('m');
+
+
+                    $meses=range($dateVencimentoM*1, ($nowM*1)+1);
+                    $controle = 0;
+                    $qtd = count($meses);
+                    foreach ($meses as $index => $mes) {
+                        $controle++;
+                        if($controle==1){
+                            debug('Primeiro');
+                        }
+                        debug($index);
+                        $data = str_pad($mes, 4, '0', STR_PAD_LEFT);
+                        $data = "01/{$data}/2022";
+                        $stmt = $conn->prepare("SELECT valor FROM nucleo.item_correcoes where data ='{$data}'");
+                        $stmt->execute();
+                        $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+//                        debug($resultado);
+                        if($controle==$qtd){
+                            debug('Ultimo');
+                        }
+
+                    }
+                    exit;
+//                    $diaVencimento = $dateVencimento->format('d');
+//                    $ultimoD = $dateVencimento->modify('last day of this month')->format('d');
+//                    $diasJ = $ultimoD - $diaVencimento;
+//                    debug($this->movimentacao['data_vencimento']);
+//                    $periodos = $this->r2data->getPeriodosTermosAntecipados($this->movimentacao['data_vencimento']);
+//                    debug($periodos);
+//                    debug($diasJ);
+//                    debug($this->movimentacao['igpm_negativo_anterior']);
+//                    exit;
+                }
                 return (($this->movimentacao['valor']*$this->movimentacao['igpm_negativo_anterior'])-$this->movimentacao['valor']);
                 break;
             default:
