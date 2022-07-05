@@ -54,13 +54,14 @@ class TrataVMovimentacao
         if (!$this->price instanceof price)
             $this->price = new price();
         $this->setDadosDaVenda($this->movimentacao['venda_id']);
-        $atualizacao = $this->getAtualizacao();
+
 
         $this->valorAtualizadoTotal += $this->getValorDaMovimentacaoAtualizado();
         $this->valorDescontoTotal += $this->getDesconto();
         $this->valorJuroAtualizadoTotal += $this->getJuroAtualizado();
         $this->multaTotal += $this->getValorMulta();
-        $this->atualizacaoTotal += $this->getAtualizacao();
+        $atualizacao = $this->getAtualizacao();
+        $this->atualizacaoTotal += $atualizacao['valor_atualizado'];
         $this->valorTotal += $this->getValor();
     }
 
@@ -158,8 +159,8 @@ class TrataVMovimentacao
                     } else
                         $juro = $this->movimentacao['juro'] + $this->getJuroDaParcelaVencida() + $this->movimentacao['desconto'];
                     if($atualizacao){
-                        $this->setValorAtrasadas($this->movimentacao['valor']-$atualizacao);
-                        return $atualizacao;
+                        $this->setValorAtrasadas($this->movimentacao['valor']-$atualizacao['valor_atualizado']);
+                        return $atualizacao['valor_atualizado'];
                     }else{
                         $this->setValorAtrasadas($juro);
                         return $this->movimentacao['valor'] + $juro;
@@ -362,18 +363,19 @@ class TrataVMovimentacao
     protected final function setValorAtrasadas($juro)
     {
         $atualizacao = $this->getAtualizacao();
+//        debug($atualizacao);exit;
         $this->valorAtrasadas['valor_sem_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'];
         $this->valorAtrasadas['juro'] += $juro;
         $this->valorAtrasadas['multa'] += $this->movimentacao['multa_calculada'];
         $this->valorAtrasadas['juro_sem_multa'] += (float)$juro - (float)$this->movimentacao['multa_calculada'];
         if($atualizacao)
-            $this->valorAtrasadas['valor_com_juro'] +=  $atualizacao;
+            $this->valorAtrasadas['valor_com_juro'] +=  $atualizacao['valor_atualizado'];
         else
-            $this->valorAtrasadas['valor_com_juro'] += $this->movimentacao['valor'] + $juro + $atualizacao;
+            $this->valorAtrasadas['valor_com_juro'] += $this->movimentacao['valor'] + $juro + $atualizacao['valor_atualizado'];
         $this->valorAtrasadas['quantidade'] += 1;
         $this->JuroMultaAtrasadas += $juro;
         $this->valorParaQuitacao['valor_sem_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'];
-        $this->valorParaQuitacao['valor_com_juro'] += $this->movimentacao['valor'] + $juro + $atualizacao;
+        $this->valorParaQuitacao['valor_com_juro'] += $this->movimentacao['valor'] + $juro + $atualizacao['valor_atualizado'];
     }
 
     /**
@@ -550,14 +552,23 @@ class TrataVMovimentacao
         return $this->multaTotal;
     }
     private function getAtualizacao(){
+        $result = array(
+            'multa'=>0,
+            'valor'=>0,
+            'indice'=>0,
+            'juros'=>0,
+            'valor_atualizado'=>0,
+        );
         if ($this->getDiasAtraso() <= 0)
-            return 0;
+            return $result;
         switch ($this->empresaId){
             case 556:
                 $meses = $this->getPeriodos($this->movimentacao['data_vencimento']);
                 $controle = 0;
                 $qtd = count($meses);
                 $valor = $this->movimentacao['valor'];
+                $juros_d_total =0;
+                $indice_d_total=0;
                 foreach ($meses as $index => $mes) {
                     $_mes = str_pad($mes['mes'] , 2 , '0' , STR_PAD_LEFT);
                     $controle++;
@@ -565,16 +576,18 @@ class TrataVMovimentacao
                         $dados1venc = $this->getDadosVencimento($this->movimentacao['data_vencimento'], true);
                         $moraD = ($this->movimentacao['mora_dia']/100)/$dados1venc['ultimo_dia_mes'];
                         $indice = $this->getIndice($_mes, $mes['ano']);
-                        $indice_d = ($indice*$valor)/$dados1venc['ultimo_dia_mes'];
-                        $juros_d = ($moraD*$valor);
-                        $valor += ($indice_d*$dados1venc['dias_no_mes'])+($juros_d*$dados1venc['dias_no_mes'])+$this->movimentacao['multa_calculada'];
+                        $indice_d = (($indice*$valor)/$dados1venc['ultimo_dia_mes'])*$dados1venc['dias_no_mes'];
+                        $juros_d = ($moraD*$valor)*$dados1venc['dias_no_mes'];
+                        $valor += $indice_d+$juros_d+$this->movimentacao['multa_calculada'];
+                        $result['multa']=$this->movimentacao['multa_calculada'];
+                        $result['valor']=$this->movimentacao['valor'];
                     }else if($controle!=$qtd){
                         $dados1venc = $this->getDadosVencimento("01/{$_mes}/{$mes['ano']}");
                         $moraD = ($this->movimentacao['mora_dia']/100)/$dados1venc['ultimo_dia_mes'];
                         $indice = $this->getIndice($_mes, $mes['ano']);
-                        $juros_d = ($moraD*$valor);
-                        $indice_d = ($indice*$valor)/$dados1venc['ultimo_dia_mes'];
-                        $valor+=($indice_d*$dados1venc['dias_no_mes'])+($juros_d*$dados1venc['dias_no_mes']);
+                        $juros_d = ($moraD*$valor)*$dados1venc['dias_no_mes'];
+                        $indice_d = (($indice*$valor)/$dados1venc['ultimo_dia_mes'])*$dados1venc['dias_no_mes'];
+                        $valor+=$indice_d+$juros_d;
                     }
                     if($controle==$qtd){
                         $dateVencimento = new \DateTime('now');
@@ -582,16 +595,21 @@ class TrataVMovimentacao
                         $dados1venc = $this->getDadosVencimento("01/{$_mes}/{$mes['ano']}");
                         $moraD = ($this->movimentacao['mora_dia']/100)/$dados1venc['ultimo_dia_mes'];
                         $indice = $this->getIndice($_mes, $mes['ano']);
-                        $juros_d = ($moraD*$valor);
+                        $juros_d = ($moraD*$valor)*$dias_no_mes;
                         $dateVencimento->modify('last day of this month');
                         $ultimo_dia_mes = $dateVencimento->format('d');
-                        $indice_d = ($indice*$valor)/$ultimo_dia_mes;
-                        $valor+=($indice_d*$dias_no_mes)+($juros_d*$dias_no_mes);
+                        $indice_d = (($indice*$valor)/$ultimo_dia_mes)*$dias_no_mes;
+                        $valor+=$indice_d+$juros_d;
                     }
+                    $juros_d_total += $juros_d;
+                    $indice_d_total += $indice_d;
                 }
-                return $valor;
+                $result['indice']=$indice_d_total;
+                $result['juros']=$juros_d_total;
+                $result['valor_atualizado']=$valor;
+                return $result;
             default:
-                return 0;
+                return $result;
         }
     }
     public function getAtualizacaoTotal(){
