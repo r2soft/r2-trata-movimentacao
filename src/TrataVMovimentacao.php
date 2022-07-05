@@ -554,7 +554,7 @@ class TrataVMovimentacao
     public function getAtualizacao(){
         $result = array(
             'vencimento'=>null,
-            'atrazo'=>0,
+            'atraso'=>0,
             'multa'=>0,
             'valor'=>0,
             'indice'=>0,
