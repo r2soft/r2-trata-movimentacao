@@ -551,12 +551,15 @@ class TrataVMovimentacao
     {
         return $this->multaTotal;
     }
-    private function getAtualizacao(){
+    public function getAtualizacao(){
         $result = array(
+            'vencimento'=>null,
+            'atrazo'=>0,
             'multa'=>0,
             'valor'=>0,
             'indice'=>0,
             'juros'=>0,
+            'valor_corrigido'=>0,
             'valor_atualizado'=>0,
         );
         if ($this->getDiasAtraso() <= 0)
@@ -574,16 +577,18 @@ class TrataVMovimentacao
                     $controle++;
                     if($controle==1){
                         $dados1venc = $this->getDadosVencimento($this->movimentacao['data_vencimento'], true);
-                        $moraD = ($this->movimentacao['mora_dia']/100)/$dados1venc['ultimo_dia_mes'];
+                        $moraD = ($this->movimentacao['mora_dia']/100)/30;
                         $indice = $this->getIndice($_mes, $mes['ano']);
                         $indice_d = (($indice*$valor)/$dados1venc['ultimo_dia_mes'])*$dados1venc['dias_no_mes'];
                         $juros_d = ($moraD*$valor)*$dados1venc['dias_no_mes'];
                         $valor += $indice_d+$juros_d+$this->movimentacao['multa_calculada'];
                         $result['multa']=$this->movimentacao['multa_calculada'];
                         $result['valor']=$this->movimentacao['valor'];
+                        $result['vencimento']=$this->movimentacao['data_vencimento'];
+                        $result['atraso']=$this->movimentacao['dias_atraso'];
                     }else if($controle!=$qtd){
                         $dados1venc = $this->getDadosVencimento("01/{$_mes}/{$mes['ano']}");
-                        $moraD = ($this->movimentacao['mora_dia']/100)/$dados1venc['ultimo_dia_mes'];
+                        $moraD = ($this->movimentacao['mora_dia']/100)/30;
                         $indice = $this->getIndice($_mes, $mes['ano']);
                         $juros_d = ($moraD*$valor)*$dados1venc['dias_no_mes'];
                         $indice_d = (($indice*$valor)/$dados1venc['ultimo_dia_mes'])*$dados1venc['dias_no_mes'];
@@ -593,7 +598,7 @@ class TrataVMovimentacao
                         $dateVencimento = new \DateTime('now');
                         $dias_no_mes = $dateVencimento->format('d');
                         $dados1venc = $this->getDadosVencimento("01/{$_mes}/{$mes['ano']}");
-                        $moraD = ($this->movimentacao['mora_dia']/100)/$dados1venc['ultimo_dia_mes'];
+                        $moraD = ($this->movimentacao['mora_dia']/100)/30;
                         $indice = $this->getIndice($_mes, $mes['ano']);
                         $juros_d = ($moraD*$valor)*$dias_no_mes;
                         $dateVencimento->modify('last day of this month');
@@ -607,6 +612,7 @@ class TrataVMovimentacao
                 $result['indice']=$indice_d_total;
                 $result['juros']=$juros_d_total;
                 $result['valor_atualizado']=$valor;
+                $result['valor_corrigido']=$result['valor']+$indice_d_total;
                 return $result;
             default:
                 return $result;
@@ -640,8 +646,12 @@ class TrataVMovimentacao
         $stmt = $conn->prepare("SELECT valor FROM nucleo.item_correcoes where data ='{$data}'");
         $stmt->execute();
         $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        if($resultado)
-            return $resultado['0']['valor']/100;
+        if($resultado){
+            if($resultado['0']['valor']>0)
+                return $resultado['0']['valor']/100;
+            return 0;
+        }
+
         $stmt = $conn->prepare("SELECT valor FROM nucleo.item_correcoes order by data desc limit 1");
         $stmt->execute();
         $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
