@@ -374,16 +374,17 @@ class TrataVMovimentacao
             $this->valorAtrasadas['juro_sem_multa'] += $atualizacao['valor_atualizado'] -$atualizacao['valor'] - $atualizacao['multa'];
             $this->valorAtrasadas['juro'] += $atualizacao['juros']+$atualizacao['multa']+$atualizacao['indice'];
             $this->valorAtrasadas['valor_com_juro'] +=  $atualizacao['valor_atualizado'];
+            $this->valorParaQuitacao['valor_com_juro'] += $atualizacao['valor_atualizado'];
         }
         else{
             $this->valorAtrasadas['juro_sem_multa'] += (float)$juro - (float)$this->movimentacao['multa_calculada'];
             $this->valorAtrasadas['valor_com_juro'] += $this->movimentacao['valor'] + $juro + $atualizacao['valor_atualizado'];
+            $this->valorParaQuitacao['valor_com_juro'] += $this->movimentacao['valor'] + $juro + $atualizacao['valor_atualizado'];
             $this->valorAtrasadas['juro'] += $juro;
         }
         $this->valorAtrasadas['quantidade'] += 1;
         $this->JuroMultaAtrasadas += $juro;
         $this->valorParaQuitacao['valor_sem_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'];
-        $this->valorParaQuitacao['valor_com_juro'] += $this->movimentacao['valor'] + $juro + $atualizacao['valor_atualizado'];
     }
 
     /**
