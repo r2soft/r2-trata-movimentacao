@@ -582,6 +582,7 @@ class TrataVMovimentacao
         switch ($this->empresaId){
             case 556:
                 $meses = $this->getPeriodos($this->movimentacao['data_vencimento']);
+
                 $controle = 0;
                 $qtd = count($meses);
                 $valor = $this->movimentacao['valor'];
@@ -684,6 +685,7 @@ class TrataVMovimentacao
         $dados['dias_no_mes'] = $ultimo;
         if($subtraiData)
             $dados['dias_no_mes'] = $ultimo-$diaV;
+        $dados['ano_primeiro_vencimento'] = $dateVencimento->format('Y');
         $dados['mes_primeiro_vencimento'] = $dateVencimento->format('m');
         $dados['dia_vencimento'] = $diaV;
         $dados['ultimo_dia_mes'] = $ultimo;
@@ -710,10 +712,14 @@ class TrataVMovimentacao
     }
 
     private function getPeriodos($dataVencimento){
+        $x = $this->r2data->getPeriodoApartirDeHoje($dataVencimento);
+//        debug($x);
+//        exit;
         $now = new \DateTime('now');
         $nowM = $now->format('m');
         $dados1venc = $this->getDadosVencimento($dataVencimento);
-        $meses=range($dados1venc['mes_primeiro_vencimento']*1, $nowM*1);
+        $meses=range(1, $x*-1);
+
         $dateVencimento = $this->movimentacao['data_vencimento'];
         if(strstr($dateVencimento, '/'))
             $dateVencimento = $this->r2data->converteData($dateVencimento);
@@ -721,10 +727,11 @@ class TrataVMovimentacao
         foreach ($meses as $index => $mes) {
             $dateVencimento->modify('+1 month');
             $meses[$index]=array(
-                'mes'=>$mes,
+                'mes'=>$dateVencimento->format('m'),
                 'ano'=>$dateVencimento->format('Y')
             );
         }
+
         return $meses;
     }
 }
