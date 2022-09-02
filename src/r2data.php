@@ -107,7 +107,7 @@ class r2data {
         return date('d/m/Y', mktime(0, 0, 0, $mes, $dia + $quantidadeDeDias, $ano));
     }
 
-    public function seData1MaiorOuIgualData2($data1, $data2) {        
+    public function seData1MaiorOuIgualData2($data1, $data2) {
         $this->setDataQueVaiSerConvertida($data1);
         if ($this->isDataBrasileira())
             $data1 = $this->getDataInternacional();
@@ -124,7 +124,7 @@ class r2data {
      * @return array com os feriados do ano (fixo e moveis)
      */
     function getFeriadosNacionais($ano) {
-        $feriados_locais = $_SESSION['Auth']['Empresa']['Empresa']['feriados_locais'];        
+        $feriados_locais = $_SESSION['Auth']['Empresa']['Empresa']['feriados_locais'];
         if ($feriados_locais) {
             $feriados_locais = explode(',', $feriados_locais);
             foreach ($feriados_locais as $key => $value) {
@@ -132,7 +132,7 @@ class r2data {
             }
         }
         $dia = 86400;
-        $datas = array();        
+        $datas = array();
         $datas['pascoa'] = easter_date($ano);
         $datas['sexta_santa'] = $datas['pascoa'] - (2 * $dia);
         $datas['carnaval'] = $datas['pascoa'] - (47 * $dia);
@@ -152,7 +152,7 @@ class r2data {
             "25/12/$ano",
         );
         if ($feriados_locais)
-            $feriados = array_merge($feriados, $feriados_locais);        
+            $feriados = array_merge($feriados, $feriados_locais);
         return $feriados;
     }
 

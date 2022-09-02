@@ -591,8 +591,10 @@ class TrataVMovimentacao
 //                $debug=array();
 //                echo "<pre>";
                 foreach ($meses as $index => $mes) {
+//                    debug($mes);
                     $_mes = str_pad($mes['mes'] , 2 , '0' , STR_PAD_LEFT);
                     $controle++;
+//                    debug($controle.' ==> '.$qtd);
                     if($controle==1){
                         $dados1venc = $this->getDadosVencimento($this->movimentacao['data_vencimento'], true);
                         $moraD = ($this->movimentacao['mora_dia']/100)/30;
@@ -606,14 +608,15 @@ class TrataVMovimentacao
                         $result['atraso']=$this->movimentacao['dias_atraso'];
 //
 //                        $debug['$_mes']=$_mes;
-//                        $debug['$juro_por_dia']=$moraD*$valor . " => '(1.00/100/30)*valor'";
-//                        $debug['$juros_d']=$juros_d . " => 'juro_por_dia*dias_calc'";
-//                        $debug['$indice_dia']=($indice*$valor)/30;
-//                        $debug['$indice_dia']=($indice*$valor)/30;
+//                        $debug['$juro_por_dia']=round($moraD*$valor,2) . " => '(1.00/100/30)*valor'";
+//                        $debug['$juros_d']=round($juros_d,2) . " => 'juro_por_dia*dias_calc'";
+//                        $debug['$indice']=round($indice*$valor, 2). " => 'Indice Mês'";
+//                        $debug['$indice_dia']=round(($indice*$valor)/30,2) . " => \$indice/30";
 //                        $debug['vencimento']=$this->movimentacao['data_vencimento'];
-//                        $debug['$indice_d']=$indice_d;
+//                        $debug['$indice_d']=round($indice_d,2). " => (\$indice/30)*\$dias_calc";
 //                        $debug['$dias_calc']=$dados1venc['dias_no_mes'];
-//                        $debug['$valor']=$valor;
+//                        $debug['$valor']=round($valor, 2);
+//                        $debug['IGPM']=$indice;
 //                        print_r($debug);
 //                        unset($debug['vencimento']);
 
@@ -626,15 +629,19 @@ class TrataVMovimentacao
                         $valor+=$indice_d+$juros_d;
 
 //                        $debug['$_mes']=$_mes;
-//                        $debug['$juro_por_dia']=$moraD*$valor;
-//                        $debug['$juros_d']=$juros_d;
-//                        $debug['$indice_dia']=($indice*$valor)/30;
-//                        $debug['$indice_d']=$indice_d;
+//                        $debug['$juro_por_dia']=round($moraD*$valor,2) . " => '(1.00/100/30)*valor'";
+//                        $debug['$juros_d']=round($juros_d,2) . " => 'juro_por_dia*dias_calc'";
+//                        $debug['$indice']=round($indice*$valor, 2). " => 'Indice Mês'";
+//                        $debug['IGPM']=$indice;
+//                        $debug['$indice_dia']=round(($indice*$valor)/30,2) . " => \$indice/30";
+//                        $debug['vencimento']=$this->movimentacao['data_vencimento'];
+//                        $debug['$indice_d']=round($indice_d,2). " => (\$indice/30)*\$dias_calc";
 //                        $debug['$dias_calc']=$dados1venc['dias_no_mes'];
-//                        $debug['$valor']=$valor;
+//                        $debug['$valor']=round($valor, 2);
 //                        print_r($debug);
-
+//                        unset($debug['vencimento']);
                     }
+
                     if($controle==$qtd){
                         $dateVencimento = new \DateTime('now');
                         $dias_no_mes = $dateVencimento->format('d');
@@ -647,22 +654,28 @@ class TrataVMovimentacao
                         $ultimo_dia_mes = $dateVencimento->format('d');
                         $indice_d = (($indice*$valor)/30)*$dias_no_mes;
                         $valor+=$indice_d+$juros_d;
-//
+
 //                        $debug['$_mes']=$_mes;
-//                        $debug['$juro_por_dia']=$moraD*$valor;
-//                        $debug['$juros_d']=$juros_d;
-//                        $debug['$indice_d']=$indice_d;
+//                        $debug['$juro_por_dia']=round($moraD*$valor,2) . " => '(1.00/100/30)*valor'";
+//                        $debug['$juros_d']=round($juros_d,2) . " => 'juro_por_dia*dias_calc'";
+//                        $debug['$indice']=round($indice*$valor, 2). " => 'Indice Mês'";
+//                        $debug['IGPM']=$indice;
+//                        $debug['$indice_dia']=round(($indice*$valor)/$dias_no_mes,2) . " => \$indice/30";
+//                        $debug['vencimento']=$this->movimentacao['data_vencimento'];
+//                        $debug['$indice_d']=round($indice_d,2). " => (\$indice/30)*\$dias_calc";
 //                        $debug['$dias_calc']=$dias_no_mes;
-//                        $debug['$valor']=$valor;
+//                        $debug['$valor']=round($valor, 2);
 //                        print_r($debug);
+//                        unset($debug['vencimento']);
                     }
+
                     $juros_d_total += $juros_d;
                     $indice_d_total += $indice_d;
                 }
-                $result['indice']=$indice_d_total;
-                $result['juros']=$juros_d_total;
-                $result['valor_atualizado']=$valor;
-                $result['valor_corrigido']=$result['valor']+$indice_d_total;
+                $result['indice']=round($indice_d_total,2);
+                $result['juros']=round($juros_d_total,2);
+                $result['valor_atualizado']=round($valor,2);
+                $result['valor_corrigido']=round($result['valor']+$indice_d_total,2);
 //                debug($result);
 //                exit;
                 return $result;
@@ -699,6 +712,7 @@ class TrataVMovimentacao
         $stmt = $conn->prepare("SELECT valor FROM nucleo.item_correcoes where data ='{$data}'");
         $stmt->execute();
         $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
         if($resultado){
             if($resultado['0']['valor']>0)
                 return $resultado['0']['valor']/100;
@@ -708,30 +722,29 @@ class TrataVMovimentacao
         $stmt = $conn->prepare("SELECT valor FROM nucleo.item_correcoes order by data desc limit 1");
         $stmt->execute();
         $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        return $resultado['0']['valor']/100;;
+
+        return $resultado['0']['valor']/100;
     }
 
     private function getPeriodos($dataVencimento){
         $x = $this->r2data->getPeriodoApartirDeHoje($dataVencimento);
-//        debug($x);
-//        exit;
         $now = new \DateTime('now');
         $nowM = $now->format('m');
         $dados1venc = $this->getDadosVencimento($dataVencimento);
-        $meses=range(1, $x*-1);
+        $meses=range(1, ($x*-1)+1);
 
         $dateVencimento = $this->movimentacao['data_vencimento'];
         if(strstr($dateVencimento, '/'))
             $dateVencimento = $this->r2data->converteData($dateVencimento);
         $dateVencimento = new \DateTime($dateVencimento);
         foreach ($meses as $index => $mes) {
-            $dateVencimento->modify('+1 month');
+            if($index>0)
+                $dateVencimento->modify("+1 month");
             $meses[$index]=array(
                 'mes'=>$dateVencimento->format('m'),
                 'ano'=>$dateVencimento->format('Y')
             );
         }
-
         return $meses;
     }
 }
