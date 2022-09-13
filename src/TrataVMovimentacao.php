@@ -599,6 +599,7 @@ class TrataVMovimentacao
                         $dados1venc = $this->getDadosVencimento($this->movimentacao['data_vencimento'], true);
                         $moraD = ($this->movimentacao['mora_dia']/100)/30;
                         $indice = $this->getIndice($_mes, $mes['ano']);
+
                         $indice_d = (($indice*$valor)/30)*$dados1venc['dias_no_mes'];
                         $juros_d = ($moraD*$valor)*$dados1venc['dias_no_mes'];
                         $valor += $indice_d+$juros_d+$this->movimentacao['multa_calculada'];
@@ -722,7 +723,11 @@ class TrataVMovimentacao
         $stmt = $conn->prepare("SELECT valor FROM nucleo.item_correcoes order by data desc limit 1");
         $stmt->execute();
         $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-
+        if($resultado){
+            if($resultado['0']['valor']>0)
+                return $resultado['0']['valor']/100;
+            return 0;
+        }
         return $resultado['0']['valor']/100;
     }
 
