@@ -124,6 +124,7 @@ class TrataVMovimentacao
     public function getDiasAtraso()
     {
         try {
+
             if ($this->theMovementWasPassed())
                 return $this->movimentacao['dias_atraso'];
         } catch (\Exception $e) {
@@ -591,12 +592,14 @@ class TrataVMovimentacao
 //                $debug=array();
 //                echo "<pre>";
                 foreach ($meses as $index => $mes) {
-//                    debug($mes);
+
                     $_mes = str_pad($mes['mes'] , 2 , '0' , STR_PAD_LEFT);
                     $controle++;
 //                    debug($controle.' ==> '.$qtd);
+
                     if($controle==1){
                         $dados1venc = $this->getDadosVencimento($this->movimentacao['data_vencimento'], true);
+                        $dados1venc['dias_no_mes']=$dados1venc['ultimo_dia_mes']-$dados1venc['dias_no_mes'];
                         $moraD = ($this->movimentacao['mora_dia']/100)/30;
                         $indice = $this->getIndice($_mes, $mes['ano']);
 
@@ -623,6 +626,7 @@ class TrataVMovimentacao
 
                     }else if($controle!=$qtd){
                         $dados1venc = $this->getDadosVencimento("01/{$_mes}/{$mes['ano']}");
+                        $dados1venc['dias_no_mes']=$dados1venc['ultimo_dia_mes']-$dados1venc['dias_no_mes'];
                         $indice = $this->getIndice($_mes, $mes['ano']);
                         $moraD = ($this->movimentacao['mora_dia']/100)/30;
                         $juros_d = ($moraD*$valor)*$dados1venc['dias_no_mes'];
@@ -643,7 +647,7 @@ class TrataVMovimentacao
 //                        unset($debug['vencimento']);
                     }
 
-                    if($controle==$qtd){
+                    if($qtd>1 && $controle==$qtd){
                         $dateVencimento = new \DateTime('now');
                         $dias_no_mes = $dateVencimento->format('d');
                         $dados1venc = $this->getDadosVencimento("01/{$_mes}/{$mes['ano']}");
@@ -736,7 +740,7 @@ class TrataVMovimentacao
         $now = new \DateTime('now');
         $nowM = $now->format('m');
         $dados1venc = $this->getDadosVencimento($dataVencimento);
-        $meses=range(1, ($x*-1)+1);
+        $meses=range(1, ($x*-1));
 
         $dateVencimento = $this->movimentacao['data_vencimento'];
         if(strstr($dateVencimento, '/'))
