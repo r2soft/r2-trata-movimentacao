@@ -596,39 +596,40 @@ class TrataVMovimentacao
                     $_mes = str_pad($mes['mes'] , 2 , '0' , STR_PAD_LEFT);
                     $controle++;
 //                    debug($controle.' ==> '.$qtd);
-
+                    $moraD = ($this->movimentacao['mora_dia']/100)/30;
                     if($controle==1){
                         $dados1venc = $this->getDadosVencimento($this->movimentacao['data_vencimento'], true);
                         $dados1venc['dias_no_mes']=$dados1venc['ultimo_dia_mes']-$dados1venc['dias_no_mes'];
-                        $moraD = ($this->movimentacao['mora_dia']/100)/30;
+
                         $indice = $this->getIndice($_mes, $mes['ano']);
 
                         $indice_d = (($indice*$valor)/30)*$dados1venc['dias_no_mes'];
+
                         $juros_d = ($moraD*$valor)*$dados1venc['dias_no_mes'];
                         $valor += $indice_d+$juros_d+$this->movimentacao['multa_calculada'];
+
                         $result['multa']=$this->movimentacao['multa_calculada'];
                         $result['valor']=$this->movimentacao['valor'];
                         $result['vencimento']=$this->movimentacao['data_vencimento'];
                         $result['atraso']=$this->movimentacao['dias_atraso'];
 //
-//                        $debug['$_mes']=$_mes;
-//                        $debug['$juro_por_dia']=round($moraD*$valor,2) . " => '(1.00/100/30)*valor'";
-//                        $debug['$juros_d']=round($juros_d,2) . " => 'juro_por_dia*dias_calc'";
-//                        $debug['$indice']=round($indice*$valor, 2). " => 'Indice Mês'";
-//                        $debug['$indice_dia']=round(($indice*$valor)/30,2) . " => \$indice/30";
-//                        $debug['vencimento']=$this->movimentacao['data_vencimento'];
-//                        $debug['$indice_d']=round($indice_d,2). " => (\$indice/30)*\$dias_calc";
-//                        $debug['$dias_calc']=$dados1venc['dias_no_mes'];
-//                        $debug['$valor']=round($valor, 2);
-//                        $debug['IGPM']=$indice;
-//                        print_r($debug);
-//                        unset($debug['vencimento']);
+                        $debug['$_mes']=$_mes;
+                        $debug['$juro_por_dia']=round($moraD*$valor,2) . " => '(1.00/100/30)*valor'";
+                        $debug['$juros_d']=round($juros_d,2) . " => 'juro_por_dia*dias_calc'";
+                        $debug['$indice']=round($indice*$valor, 2). " => 'Indice Mês'";
+                        $debug['$indice_dia']=round(($indice*$valor)/30,2) . " => \$indice/30";
+                        $debug['vencimento']=$this->movimentacao['data_vencimento'];
+                        $debug['$indice_d']=round($indice_d,2). " => (\$indice/30)*\$dias_calc";
+                        $debug['$dias_calc']=$dados1venc['dias_no_mes'];
+                        $debug['$valor']=round($valor, 2);
+                        $debug['IGPM']=$indice;
+
+                        unset($debug['vencimento']);
 
                     }else if($controle!=$qtd){
                         $dados1venc = $this->getDadosVencimento("01/{$_mes}/{$mes['ano']}");
                         $dados1venc['dias_no_mes']=$dados1venc['ultimo_dia_mes']-$dados1venc['dias_no_mes'];
                         $indice = $this->getIndice($_mes, $mes['ano']);
-                        $moraD = ($this->movimentacao['mora_dia']/100)/30;
                         $juros_d = ($moraD*$valor)*$dados1venc['dias_no_mes'];
                         $indice_d = (($indice*$valor)/30)*$dados1venc['dias_no_mes'];
                         $valor+=$indice_d+$juros_d;
@@ -651,7 +652,7 @@ class TrataVMovimentacao
                         $dateVencimento = new \DateTime('now');
                         $dias_no_mes = $dateVencimento->format('d');
                         $dados1venc = $this->getDadosVencimento("01/{$_mes}/{$mes['ano']}");
-                        $moraD = ($this->movimentacao['mora_dia']/100)/30;
+
                         $debug['$indice_dia']=($indice*$valor)/30;
                         $indice = $this->getIndice($_mes, $mes['ano']);
                         $juros_d = ($moraD*$valor)*$dias_no_mes;
@@ -676,9 +677,12 @@ class TrataVMovimentacao
 
                     $juros_d_total += $juros_d;
                     $indice_d_total += $indice_d;
+
+//                    debug($indice_d_total);
                 }
+
                 $result['indice']=round($indice_d_total,2);
-                $result['juros']=round($juros_d_total,2);
+                $result['juros']=round(($moraD*$result['atraso'])*$result['valor'],2);
                 $result['valor_atualizado']=round($valor,2);
                 $result['valor_corrigido']=round($result['valor']+$indice_d_total,2);
 //                debug($result);
