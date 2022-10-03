@@ -162,7 +162,7 @@ class r2data {
      * @return boolean
      */
     public function isFimDeSemana($data) {
-        $array_dias_proibidos = Array(6, 0); // 0 = domingo, 6= = sábado         
+        $array_dias_proibidos = Array(6, 0); // 0 = domingo, 6= = sábado
         if (in_array(date('w', strtotime($this->converteData($data))), $array_dias_proibidos))
             return true;
         return false;
@@ -283,6 +283,31 @@ class r2data {
         }
         $Periodos = 0;
         $Periodos += $this->calculaAno($data[0]);
+        $Periodos += $this->calculaMes($data[1]);
+        $dias = $this->calculaDias($data[2],$data[1]);
+        if ($dias >= 0){
+            $Periodos--;
+        }else{
+            $Periodos-=2;
+        }
+        return $Periodos;
+    }
+
+    public function getPeriodoAteHoje($data){
+
+        $data = explode('-',$data);
+        if (empty($data[1])){
+            $data = explode('/',$data[0]);
+            $ano= $data[2];
+            $mes= $data[1];
+            $dia= '01';
+            $data[2] = $dia;
+            $data[1] = $mes;
+            $data[0] = $ano;
+        }
+        $Periodos = 0;
+        $Periodos += $this->calculaAno($data[0]);
+
         $Periodos += $this->calculaMes($data[1]);
         $dias = $this->calculaDias($data[2],$data[1]);
         if ($dias >= 0){

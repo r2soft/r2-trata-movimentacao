@@ -587,7 +587,7 @@ class TrataVMovimentacao
         switch ($this->empresaId){
             case 556:
                 $meses = $this->getPeriodos($this->movimentacao['data_vencimento']);
-
+//                debug($meses);exit;
                 $controle = 0;
                 $qtd = count($meses);
 //                debug($qtd);exit;
@@ -646,6 +646,7 @@ class TrataVMovimentacao
                     }else if($controle!=$qtd){
 
                         $dados1venc = $this->getDadosVencimento("01/{$_mes}/{$mes['ano']}");
+//                        debug($dados1venc);
                         $moraD = ($this->movimentacao['mora_dia']/100)/$dados1venc['ultimo_dia_mes'];
                         $indice = $this->getIndice($_mes, $mes['ano']);
                         $juros_d = ($moraD*$valor)*$dados1venc['dias_no_mes'];
@@ -665,7 +666,7 @@ class TrataVMovimentacao
                             'Juros total'=>$juros_d,
                             'VALOR ATUALIZADO'=>round($valor, 2));
 
-//                            debug($meio);
+//                        debug($meio);
 
                     }
 
@@ -673,7 +674,7 @@ class TrataVMovimentacao
                         $dateVencimento = $this->movimentacao['data_vencimento'];
                         if(strstr($dateVencimento, '/'))
                             $dateVencimento = $this->r2data->converteData($dateVencimento);
-                        $dados1venc = $this->getDadosVencimento("01/{$_mes}/{$mes['ano']}", false, true);
+                        $dados1venc = $this->getDadosVencimento("01/{$_mes}/{$mes['ano']}", true, true);
 
                         $moraD = ($this->movimentacao['mora_dia']/100)/$dados1venc['ultimo_dia_mes'];
                         $dateVencimento = new \DateTime($dateVencimento);
@@ -776,7 +777,7 @@ class TrataVMovimentacao
     }
 
     private function getPeriodos($dataVencimento){
-        $x = $this->r2data->getPeriodoApartirDeHoje($dataVencimento);
+        $x = $this->r2data->getPeriodoAteHoje($dataVencimento);
         $now = new \DateTime('now');
         $nowM = $now->format('m');
         $dados1venc = $this->getDadosVencimento($dataVencimento);
@@ -785,6 +786,7 @@ class TrataVMovimentacao
             $x+=-1;
         }
         $meses=range(1, ($x*-1));
+
         if($dados1venc['mes_primeiro_vencimento']=='02')
             $meses=range(1, ($x*-1)+1);
         $dateVencimento = $this->movimentacao['data_vencimento'];
