@@ -778,15 +778,15 @@ class TrataVMovimentacao
 
     private function getPeriodos($dataVencimento){
         $x = $this->r2data->getPeriodoAteHoje($dataVencimento);
+
         $now = new \DateTime('now');
         $nowM = $now->format('m');
         $dados1venc = $this->getDadosVencimento($dataVencimento);
-
         if($x==-1 and $nowM!=$dados1venc['mes_primeiro_vencimento']){
             $x+=-1;
-        }
+        }elseif ($dados1venc['mes_primeiro_vencimento']=='02')
+            $x+=1;
         $meses=range(1, ($x*-1));
-
         if($dados1venc['mes_primeiro_vencimento']=='02')
             $meses=range(1, ($x*-1)+1);
         $dateVencimento = $this->movimentacao['data_vencimento'];
