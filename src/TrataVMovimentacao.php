@@ -609,18 +609,18 @@ class TrataVMovimentacao
                             $dateVencimento=$this->movimentacao['data_vencimento'];
                             if(strstr($dateVencimento, '/'))
                                 $dateVencimento = $this->r2data->converteData($dateVencimento);
+
                             $dados1venc = $this->getDadosVencimento($dateVencimento, true, true);
 //                            if($dados1venc['dias_no_mes']>=1)
 //                                $dados1venc['dias_no_mes']=$dados1venc['dias_no_mes']-1;
+
                         }else
                             $dados1venc = $this->getDadosVencimento($this->movimentacao['data_vencimento'], true);
                         $moraD = ($this->movimentacao['mora_dia']/100)/$dados1venc['ultimo_dia_mes'];
                         $indice = $this->getIndice($_mes, $mes['ano']);
 
                         $indice_d = (($indice*$this->movimentacao['valor'])/$dados1venc['ultimo_dia_mes'])*$dados1venc['dias_no_mes'];
-
                         $juros_d = ($moraD*$this->movimentacao['valor'])*$dados1venc['dias_no_mes'];
-
                         $valor += $indice_d+$juros_d+$this->movimentacao['multa_calculada'];
                         $result['multa']=$this->movimentacao['multa_calculada'];
                         $result['valor']=$this->movimentacao['valor'];
@@ -644,16 +644,13 @@ class TrataVMovimentacao
 //                        debug($primeiro);
 
                     }else if($controle!=$qtd){
-
                         $dados1venc = $this->getDadosVencimento("01/{$_mes}/{$mes['ano']}");
-//                        debug($dados1venc);
                         $moraD = ($this->movimentacao['mora_dia']/100)/$dados1venc['ultimo_dia_mes'];
                         $indice = $this->getIndice($_mes, $mes['ano']);
                         $juros_d = ($moraD*$valor)*$dados1venc['dias_no_mes'];
                         $indice_d = (($indice*$valor)/$dados1venc['ultimo_dia_mes'])*$dados1venc['dias_no_mes'];
                         $valor_at = $valor;
                         $valor+=$indice_d+$juros_d;
-
 
                         $meio = array(
                             'MEIO'=>'MEIO',
@@ -674,7 +671,7 @@ class TrataVMovimentacao
                         $dateVencimento = $this->movimentacao['data_vencimento'];
                         if(strstr($dateVencimento, '/'))
                             $dateVencimento = $this->r2data->converteData($dateVencimento);
-                        $dados1venc = $this->getDadosVencimento("01/{$_mes}/{$mes['ano']}", true, true);
+                        $dados1venc = $this->getDadosVencimento("01/{$_mes}/{$mes['ano']}", false, true);
 
                         $moraD = ($this->movimentacao['mora_dia']/100)/$dados1venc['ultimo_dia_mes'];
                         $dateVencimento = new \DateTime($dateVencimento);
@@ -732,12 +729,16 @@ class TrataVMovimentacao
         $diaV = $dateVencimento->format('d');
         $dateVencimento->modify('last day of this month');
         $ultimo = $dateVencimento->format('d');
+        $ultimoDiaDoMes = $ultimo;
         if($now){
             $now = new \DateTime('now');
-            $now->modify('last day of this month');
             $ultimo = $now->format('d');
+
+            $now->modify('last day of this month');
+            $ultimoDiaDoMes = $now->format('d');
+
         }
-//        debug($ultimo);
+
         $dados['dias_no_mes'] = $ultimo;
 //        debug($ultimo." - ".$diaV);
 //        debug($dados);exit;
@@ -746,8 +747,7 @@ class TrataVMovimentacao
         $dados['ano_primeiro_vencimento'] = $dateVencimento->format('Y');
         $dados['mes_primeiro_vencimento'] = $dateVencimento->format('m');
         $dados['dia_vencimento'] = $diaV;
-        $dados['ultimo_dia_mes'] = $ultimo;
-//        debug($dados);
+        $dados['ultimo_dia_mes'] = $ultimoDiaDoMes;
         return $dados;
     }
 
