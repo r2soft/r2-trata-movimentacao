@@ -54,15 +54,19 @@ class TrataVMovimentacao
         if (!$this->price instanceof price)
             $this->price = new price();
         $this->setDadosDaVenda($this->movimentacao['venda_id']);
-
         $atualizacao = $this->getAtualizacao();
-
         $this->valorAtualizadoTotal += $this->getValorDaMovimentacaoAtualizado();
-        $this->valorDescontoTotal += $this->getDesconto();
-        $this->valorJuroAtualizadoTotal += $atualizacao['juros'];
-        $this->multaTotal += $atualizacao['multa'];
-
-        $this->atualizacaoTotal += $atualizacao['valor_atualizado'];
+        if($atualizacao['valor_atualizado']>0){
+            $this->valorDescontoTotal += $this->getDesconto();
+            $this->valorJuroAtualizadoTotal += $atualizacao['juros'];
+            $this->multaTotal += $atualizacao['multa'];
+            $this->atualizacaoTotal += $atualizacao['valor_atualizado'];
+        }else{
+            $this->valorDescontoTotal += $this->getDesconto();
+            $this->valorJuroAtualizadoTotal += $this->getJuroAtualizado();
+            $this->multaTotal += $this->getValorMulta();
+            $this->atualizacaoTotal += $this->getValorDaMovimentacaoAtualizado();
+        }
         $this->valorTotal += $this->getValor();
 
     }
