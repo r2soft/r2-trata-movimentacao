@@ -34,6 +34,23 @@ class TrataVMovimentacao
     private $ordemMovimentacoesAgrupadas = array();
     private $movimentacoesPaiAgupradas = array();
     private $empresaId = null;
+    private $jurosMulta=0;
+
+    /**
+     * @return int
+     */
+    public function getJurosMulta()
+    {
+        return $this->jurosMulta;
+    }
+
+    /**
+     * @param int $jurosMulta
+     */
+    public function setJurosMulta($jurosMulta)
+    {
+        $this->jurosMulta = $jurosMulta;
+    }
 
     private function theMovementWasPassed()
     {
@@ -54,19 +71,15 @@ class TrataVMovimentacao
         if (!$this->price instanceof price)
             $this->price = new price();
         $this->setDadosDaVenda($this->movimentacao['venda_id']);
+
         $atualizacao = $this->getAtualizacao();
+
         $this->valorAtualizadoTotal += $this->getValorDaMovimentacaoAtualizado();
-        if($atualizacao['valor_atualizado']>0){
-            $this->valorDescontoTotal += $this->getDesconto();
-            $this->valorJuroAtualizadoTotal += $atualizacao['juros'];
-            $this->multaTotal += $atualizacao['multa'];
-            $this->atualizacaoTotal += $atualizacao['valor_atualizado'];
-        }else{
-            $this->valorDescontoTotal += $this->getDesconto();
-            $this->valorJuroAtualizadoTotal += $this->getJuroAtualizado();
-            $this->multaTotal += $this->getValorMulta();
-            $this->atualizacaoTotal += $this->getValorDaMovimentacaoAtualizado();
-        }
+        $this->valorDescontoTotal += $this->getDesconto();
+        $this->valorJuroAtualizadoTotal += $atualizacao['juros'];
+        $this->multaTotal += $atualizacao['multa'];
+
+        $this->atualizacaoTotal += $atualizacao['valor_atualizado'];
         $this->valorTotal += $this->getValor();
 
     }
