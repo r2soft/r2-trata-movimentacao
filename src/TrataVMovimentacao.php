@@ -677,6 +677,7 @@ class TrataVMovimentacao
                             "IGPM:"=> $indice,
                             "Mes:"=>$_mes,
                             "Indice:"=>round($indice_d,2),
+                            'Juros dia'=>$moraD*$valor,
                             'Juros total'=>$juros_d,
                             'VALOR ATUALIZADO'=>round($valor, 2));
 
@@ -695,6 +696,8 @@ class TrataVMovimentacao
                         $dias_no_mes = $dados1venc['dias_no_mes'];
                         $indice = $this->getIndice($_mes, $mes['ano']);
                         $juros_d = ($moraD*$valor)*$dias_no_mes;
+//                        debug("MoraD: ". $moraD ." Valor: " .$valor." Dias No Mês: ". $dias_no_mes);
+                        $juros_d = ($moraD*$this->movimentacao['valor'])*$dados1venc['dias_no_mes'];
                         $dateVencimento->modify('last day of this month');
                         $ultimo_dia_mes = $dateVencimento->format('d');
                         $indice_d = (($indice*$valor)/$dados1venc['ultimo_dia_mes'])*$dias_no_mes;
@@ -709,6 +712,7 @@ class TrataVMovimentacao
                             "IGPM:"=> $indice,
                             "Mes:"=>$_mes,
                             "Indice:"=>round($indice_d,2),
+                            'Juros dia'=>$moraD*$valor,
                             'Juros total'=>$juros_d,
                             'VALOR ATUALIZADO'=>round($valor, 2));
 
@@ -743,17 +747,21 @@ class TrataVMovimentacao
             $dateVencimento = $this->r2data->converteData($dateVencimento);
 
         $dateVencimento = new \DateTime($dateVencimento);
+//        debug($dateVencimento->format('d/m/Y'));
         $diaV = $dateVencimento->format('d');
         $dateVencimento->modify('last day of this month');
         $ultimo = $dateVencimento->format('d');
+//        debug($dateVencimento->format('d/m/Y'));
         $ultimoDiaDoMes = $ultimo;
         if($now){
             $now = new \DateTime('now');
             $ultimo = $now->format('d');
-
+            if($ultimo=='01'){
+                $now->sub(new \DateInterval('P1D'));
+                $ultimo=$now->format('d');
+            }
             $now->modify('last day of this month');
             $ultimoDiaDoMes = $now->format('d');
-
         }
 
         $dados['dias_no_mes'] = $ultimo;
