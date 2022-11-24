@@ -76,9 +76,8 @@ class TrataVMovimentacao
 
         $this->valorAtualizadoTotal += $this->getValorDaMovimentacaoAtualizado();
         $this->valorDescontoTotal += $this->getDesconto();
-        $this->valorJuroAtualizadoTotal += $atualizacao['juros'];
+        $this->valorJuroAtualizadoTotal += $atualizacao['juros']?$atualizacao['juros']:$this->movimentacao['juro_total'];
         $this->multaTotal += $atualizacao['multa'];
-
         $this->atualizacaoTotal += $atualizacao['valor_atualizado'];
         $this->valorTotal += $this->getValor();
 
@@ -259,7 +258,7 @@ class TrataVMovimentacao
         }
     }
 
-    private function getJuroDaParcelaVencida()
+    public function getJuroDaParcelaVencida()
     {
         return $this->movimentacao['juro_total'];
     }
