@@ -77,7 +77,8 @@ class TrataVMovimentacao
         $this->valorAtualizadoTotal += $this->getValorDaMovimentacaoAtualizado();
         $this->valorDescontoTotal += $this->getDesconto();
         $this->valorJuroAtualizadoTotal += $atualizacao['juros']?$atualizacao['juros']:$this->movimentacao['juro_total'];
-        $this->multaTotal += $atualizacao['multa'];
+        if($atualizacao['multa']==0 and $this->movimentacao['dias_atraso']>0)
+            $this->multaTotal += $atualizacao['multa']?$atualizacao['multa']:$this->movimentacao['multa_calculada'];
         $this->atualizacaoTotal += $atualizacao['valor_atualizado'];
         $this->valorTotal += $this->getValor();
 
