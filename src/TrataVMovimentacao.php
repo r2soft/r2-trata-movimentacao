@@ -2,6 +2,7 @@
 
 namespace R2Soft\VMovimentacao;
 
+use Exception;
 use R2Soft\VMovimentacao\DB\Conexao;
 
 class TrataVMovimentacao
@@ -35,6 +36,7 @@ class TrataVMovimentacao
     private $movimentacoesPaiAgupradas = array();
     private $empresaId = null;
     private $jurosMulta=0;
+    private $valuesPorTipoParcela = array();
 
     /**
      * @return int
@@ -52,36 +54,130 @@ class TrataVMovimentacao
         $this->jurosMulta = $jurosMulta;
     }
 
+    /**
+     * @throws Exception
+     */
     private function theMovementWasPassed()
     {
-        if (empty($this->movimentacao))
-            throw new \Exception("Você deve passar uma movimentacao! exemplo: trataMovimentacao::setMovimentacao()");
+        if (empty($this->movimentacao)) {
+            throw new Exception('Você deve passar uma movimentacao! exemplo: trataMovimentacao::setMovimentacao()');
+        }
+
         return true;
     }
 
+    /**
+     * @throws Exception
+     */
     public function setMovimentacao($movimentacao)
     {
         if (isset($movimentacao['VMovimentacao']))
             $this->movimentacao = $movimentacao['VMovimentacao'];
         else
-            throw new \Exception("Dados incorretos! a Movimentacao deve ter a chave 'VMovimentacao'");
+            throw new Exception("Dados incorretos! a Movimentacao deve ter a chave 'VMovimentacao'");
+
 
         if (!$this->r2data instanceof r2data)
             $this->r2data = new r2data();
         if (!$this->price instanceof price)
             $this->price = new price();
+
         $this->setDadosDaVenda($this->movimentacao['venda_id']);
 
         $atualizacao = $this->getAtualizacao();
 
         $this->valorAtualizadoTotal += $this->getValorDaMovimentacaoAtualizado();
         $this->valorDescontoTotal += $this->getDesconto();
-        $this->valorJuroAtualizadoTotal += $atualizacao['juros']?$atualizacao['juros']:$this->movimentacao['juro_total'];
-        if($atualizacao['multa']==0 and $this->movimentacao['dias_atraso']>0)
-            $this->multaTotal += $atualizacao['multa']?$atualizacao['multa']:$this->movimentacao['multa_calculada'];
+        $this->valorJuroAtualizadoTotal += $atualizacao['juros'] ?: $this->movimentacao['juro_total'];
+
+        if($atualizacao['multa'] == 0 and $this->movimentacao['dias_atraso'] > 0) {
+            $this->multaTotal += $atualizacao['multa'] ?: $this->movimentacao['multa_calculada'];
+        }
+
         $this->atualizacaoTotal += $atualizacao['valor_atualizado'];
         $this->valorTotal += $this->getValor();
 
+        $dataVencimento = $this->movimentacao['data_prorogacao_antecipacao'] == null ? $this->movimentacao['data_vencimento'] : $this->movimentacao['data_prorogacao_antecipacao'];
+
+        $today = strtotime(date('Y-m-d'));
+        $dataVencimento = strtotime($dataVencimento);
+
+        if ($this->movimentacao['data_pagamento']) {
+            $dataPagamento = $this->movimentacao['data_pagamento'];
+            $valorPago = $this->movimentacao['valor'] + $this->movimentacao['desconto'];
+            $valorPagoComJuroMulta = $this->movimentacao['valor_pago'];
+        } else {
+            $valorAReceber = $this->movimentacao['valor'];
+            if ($today > $dataVencimento && !isset($dataPagamento)) {
+                $valorAReceberComJuroMulta = $this->movimentacao['valor'] + ($atualizacao['multa'] ?: $this->movimentacao['multa_calculada']) + ($atualizacao['juros'] ?: $this->movimentacao['juro_total']);
+            } else {
+                $valorAReceberComJuroMulta = $this->movimentacao['valor'];
+            }
+        }
+
+        if ($today > $dataVencimento && !isset($dataPagamento)) {
+            $valorAtrasadoComJurosMulta = $this->movimentacao['valor'] + ($atualizacao['multa'] ?: $this->movimentacao['multa_calculada']) + ($atualizacao['juros'] ?: $this->movimentacao['juro_total']);
+            $valorAtrasado = $this->movimentacao['valor'];
+        }
+
+        $dataPagamento = isset($dataPagamento) ? $dataPagamento : null;
+        $valorTotal = $this->movimentacao['valor'] != null ? $this->movimentacao['valor'] : 0;
+        $valorPago = isset($valorPago) ? $valorPago : null;
+        $valorPagoComJuroMulta = isset($valorPagoComJuroMulta) ? $valorPagoComJuroMulta : null;
+        $valorAtrasado = isset($valorAtrasado) ? $valorAtrasado : null;
+        $valorAtrasadoComJurosMulta = isset($valorAtrasadoComJurosMulta) ? $valorAtrasadoComJurosMulta : null;
+        $valorAReceber = isset($valorAReceber) ? $valorAReceber : null;
+        $valorAReceberComJuroMulta = isset($valorAReceberComJuroMulta) ? $valorAReceberComJuroMulta : null;
+
+        $this->setValuesPorTipoParcela(
+            $this->movimentacao['tipo_parcela_id'], $dataPagamento, $valorTotal, $valorPago,
+            $valorPagoComJuroMulta, $valorAtrasado, $valorAtrasadoComJurosMulta, $valorAReceber, $valorAReceberComJuroMulta
+        );
+    }
+
+    private function setValuesPorTipoParcela(
+        $tipoParcela, $dataPagamento, $valorTotal, $valorPago, $valorPagoComJuroMulta,
+        $valorAtrasado, $valorAtrasadoComJurosMulta, $valorAReceber, $valorAReceberComJuroMulta)
+    {
+        $valorTotalAux = isset($this->valuesPorTipoParcela[$tipoParcela]['valorTotal']) ? $this->valuesPorTipoParcela[$tipoParcela]['valorTotal'] : 0;
+        $valorPagoAux = isset($this->valuesPorTipoParcela[$tipoParcela]['valorPago']) ? $this->valuesPorTipoParcela[$tipoParcela]['valorPago'] : 0;
+        $valorPagoComJuroMultaAux = isset($this->valuesPorTipoParcela[$tipoParcela]['valorPagoComJuroMulta']) ? $this->valuesPorTipoParcela[$tipoParcela]['valorPagoComJuroMulta'] : 0;
+        $valorAtrasadoAux = isset($this->valuesPorTipoParcela[$tipoParcela]['valorAtrasado']) ? $this->valuesPorTipoParcela[$tipoParcela]['valorAtrasado'] : 0;
+        $valorAtrasadoComJurosMultaAux = isset($this->valuesPorTipoParcela[$tipoParcela]['valorAtrasadoComJurosMulta']) ? $this->valuesPorTipoParcela[$tipoParcela]['valorAtrasadoComJurosMulta'] : 0;
+        $valorAReceberAux = isset($this->valuesPorTipoParcela[$tipoParcela]['valorAReceber']) ? $this->valuesPorTipoParcela[$tipoParcela]['valorAReceber'] : 0;
+        $valorAReceberComJuroMultaAux = isset($this->valuesPorTipoParcela[$tipoParcela]['valorAReceberComJuroMulta']) ? $this->valuesPorTipoParcela[$tipoParcela]['valorAReceberComJuroMulta'] : 0;
+
+        $this->valuesPorTipoParcela[$tipoParcela]['valorTotal'] = ($valorTotalAux += $valorTotal);
+        $this->valuesPorTipoParcela[$tipoParcela]['valorPago'] = ($valorPagoAux += $valorPago);
+        $this->valuesPorTipoParcela[$tipoParcela]['valorPagoComJuroMulta'] = ($valorPagoComJuroMultaAux += $valorPagoComJuroMulta);
+        $this->valuesPorTipoParcela[$tipoParcela]['valorAtrasado'] = ($valorAtrasadoAux += $valorAtrasado);
+        $this->valuesPorTipoParcela[$tipoParcela]['valorAtrasadoComJurosMulta'] = ($valorAtrasadoComJurosMultaAux += $valorAtrasadoComJurosMulta);
+        $this->valuesPorTipoParcela[$tipoParcela]['valorAReceber'] = ($valorAReceberAux += $valorAReceber);
+        $this->valuesPorTipoParcela[$tipoParcela]['valorAReceberComJuroMulta'] = ($valorAReceberComJuroMultaAux += $valorAReceberComJuroMulta);
+
+        $this->valuesPorTipoParcela[$tipoParcela]['quantitadeParcelaTotal'][] = true;
+        $dataPagamento ? $this->valuesPorTipoParcela[$tipoParcela]['quantidadeParcelaPaga'][] = true : '';
+        $valorAtrasadoComJurosMulta ? $this->valuesPorTipoParcela[$tipoParcela]['quantidadeParcelaAtrasada'][] = true : '';
+        $valorAReceber ? $this->valuesPorTipoParcela[$tipoParcela]['quantidadeParcelaAReceber'][] = true : '';
+    }
+
+    public function getValuesPorTipoParcela()
+    {
+        foreach ($this->valuesPorTipoParcela as $key => $tipoParcela) {
+            $conn = Conexao::getInstance();
+            $stmt = $conn->prepare("SELECT name FROM nucleo.tipo_parcelas where id = {$key}");
+            $stmt->execute();
+            $exec = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $nomeTipoParcela = $exec[0]['name'];
+
+            $this->valuesPorTipoParcela[$key]['quantitadeParcelaTotal'] = count(isset($tipoParcela['quantitadeParcelaTotal']) ? $tipoParcela['quantitadeParcelaTotal'] : array());
+            $this->valuesPorTipoParcela[$key]['quantidadeParcelaPaga'] = count(isset($tipoParcela['quantidadeParcelaPaga']) ? $tipoParcela['quantidadeParcelaPaga'] : array());
+            $this->valuesPorTipoParcela[$key]['quantidadeParcelaAtrasada'] = count(isset($tipoParcela['quantidadeParcelaAtrasada']) ? $tipoParcela['quantidadeParcelaAtrasada'] : array());
+            $this->valuesPorTipoParcela[$key]['quantidadeParcelaAReceber'] = count(isset($tipoParcela['quantidadeParcelaAReceber']) ? $tipoParcela['quantidadeParcelaAReceber'] : array());
+            $this->valuesPorTipoParcela[$key]['descricao'] = $nomeTipoParcela;
+        }
+
+        return $this->valuesPorTipoParcela;
     }
 
     private function getAgrupadas($agrupadasJson)

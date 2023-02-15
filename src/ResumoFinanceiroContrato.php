@@ -64,4 +64,9 @@ class ResumoFinanceiroContrato
     {
         return $this->trataVMovimentacaoR->getValorAReceber();
     }
+
+    public function getValuesPorTipoParcela()
+    {
+        return $this->trataVMovimentacaoR->getValuesPorTipoParcela();
+    }
 }
