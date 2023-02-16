@@ -327,6 +327,9 @@ class TrataVMovimentacao
                                 $valor = $this->price->getValorPresenteDaParcela($this->movimentacao['valor'], $this->dadosDaVenda['juro_aplicado'], $periodos);
                                 $this->movimentacao['valor'] = $this->movimentacao['valor']+$mip+$adm;
                                 break;
+                            case 573:
+                                $valor = $this->price->getValorPresenteDaParcela($this->movimentacao['valor_inicial'], $this->dadosDaVenda['juro_aplicado'], $periodos);
+                                break;
                             default:
                                 $valor = $this->price->getValorPresenteDaParcela($this->movimentacao['valor'], $this->dadosDaVenda['juro_aplicado'], $periodos);
 
