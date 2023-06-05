@@ -71,6 +71,7 @@ class TrataVMovimentacao
      */
     public function setMovimentacao($movimentacao)
     {
+//        debug($movimentacao);exit;
         if (isset($movimentacao['VMovimentacao']))
             $this->movimentacao = $movimentacao['VMovimentacao'];
         else
@@ -329,6 +330,12 @@ class TrataVMovimentacao
                                 break;
                             case 573:
                                 $valor = $this->price->getValorPresenteDaParcela($this->movimentacao['valor_inicial'], $this->dadosDaVenda['juro_aplicado'], $periodos);
+                                break;
+                            case 943:
+                                if($this->movimentacao['identificacao']!=1)
+                                    $valor = $this->price->getValorPresenteDaParcela($this->movimentacao['valor_inicial'], 0, $periodos);
+                                else
+                                    $valor = $this->price->getValorPresenteDaParcela($this->movimentacao['valor_inicial'], $this->dadosDaVenda['juro_aplicado'], $periodos);
                                 break;
                             default:
                                 $valor = $this->price->getValorPresenteDaParcela($this->movimentacao['valor'], $this->dadosDaVenda['juro_aplicado'], $periodos);
