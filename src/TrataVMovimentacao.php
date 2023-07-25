@@ -272,7 +272,10 @@ class TrataVMovimentacao
 
                     $juro = 0;
                     if ($this->getJuroRemanescente() > 0) {
-                        $juro = $this->getJuroRemanescente() + $this->getJuroDaParcelaVencida() + $this->movimentacao['desconto'];
+                        if($this->getJuroRemanescente() >= $this->movimentacao['multa_calculada']){
+                            $juro = $this->getJuroRemanescente() + $this->getJuroDaParcelaVencida() + $this->movimentacao['desconto'];
+                        }else
+                            $juro = $this->getJuroRemanescente() + $this->getJuroDaParcelaVencida() + $this->movimentacao['multa_calculada'] + $this->movimentacao['desconto'];
                     } elseif ($this->movimentacao['juro'] <= 0) {
                         $juro = $this->movimentacao['juro'] + $this->getJuroDaParcelaVencida() + $this->movimentacao['multa_calculada'] + $this->movimentacao['desconto'];
                     } else
