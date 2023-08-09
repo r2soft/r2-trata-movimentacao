@@ -11,11 +11,14 @@ class ResumoFinanceiroContrato
     private $tipoParcelasId=null;
 
 
-    public function __construct($vendaId)
+    public function __construct($vendaId, $diversas=false)
     {
         $conn = Conexao::getInstance();
         if(empty($this->tipoParcelasId)){
-            $stmt = $conn->prepare('select id from nucleo.tipo_parcelas where identificacao in (1,2,3,4,6,10)');
+            if($diversas)
+                $stmt = $conn->prepare('select id from nucleo.tipo_parcelas where identificacao in (1,2,3,4,5,6,10)');
+            else
+                $stmt = $conn->prepare('select id from nucleo.tipo_parcelas where identificacao in (1,2,3,4,6,10)');
             $stmt->execute();
             $tipoParcelas = $stmt->fetchAll(PDO::FETCH_COLUMN);
             $this->tipoParcelasId = join (',', $tipoParcelas);
@@ -37,9 +40,9 @@ class ResumoFinanceiroContrato
         $this->trataVMovimentacaoR->setNullMovimentacao ();
     }
 
-    public function getInformacoesAtrasadas()
+    public function getInformacoesAtrasadas($diversas=false)
     {
-        return $this->trataVMovimentacaoR->getValorAtrasadas();
+        return $this->trataVMovimentacaoR->getValorAtrasadas($diversas);
     }
 
     public function getInformacoesQuitadas()
