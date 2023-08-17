@@ -36,7 +36,13 @@ class r2data {
             return $this->getDataBrasileira();
     }
 
-    private function isDataBrasileira() {
+    private function isDataBrasileira($data=null) {
+        if($data){
+            if (strstr($data, "/"))
+                return true;
+            return false;
+        }
+
         if (strstr($this->getDataQueVaiSerConvertida(), "/"))
             return true;
         return false;
@@ -417,14 +423,16 @@ class r2data {
         return $dias;
     }
 
-    public function getPeriodosTermosAntecipados($data)
+    public function getPeriodosTermosAntecipados($data, $dataBaseValorPresente=null)
     {
+        if($dataBaseValorPresente)
+            return $this->calcularNumeroMeses($dataBaseValorPresente, $data);
         return $this->getPeriodoApartirDeHoje($data);
     }
 
-    public function getPeriodosTermosVencidos($data)
+    public function getPeriodosTermosVencidos($data,$dataBaseValorPresente=null)
     {
-        return ($this->getPeriodosTermosAntecipados($data));
+        return ($this->getPeriodosTermosAntecipados($data, $dataBaseValorPresente));
     }
 
 
@@ -455,25 +463,7 @@ class r2data {
 
         return $juro;
     }
-    //Calculo correto Baseando no valor total contando juros anteriores
-//    public function calculaJuroBoletoCorreto($valor, $ValorJuro, $ValorMultaMora, $ValorJuroMora, $dataVencimentoOriginal, $dataProrrogacao)
-//    {
-//        $juro = null;
-//        $taxaJuro = ($ValorJuroMora!=0) ? $ValorJuroMora / 100 : 0;
-//        $taxaMulta = ($ValorMultaMora!=0) ? $ValorMultaMora / 100 : 0;
-//        if (!empty($valor) && !empty($taxaJuro) && !empty($dataVencimentoOriginal) && !empty($dataProrrogacao)){
-//            $valorMulta = ($valor - $ValorJuro)*$taxaMulta;
-//            $valor -= ($valorMulta + $ValorJuro);
-//            $dias = $this->diasAtraso($dataVencimentoOriginal, $dataProrrogacao);
-//            $dias++;
-//            if ($dias > 0 && $taxaJuro != 0){
-//                $juroBase = (($taxaJuro/30)*$dias);
-//                $juroBase = ($juroBase -(($juroBase*((pow((1+$juroBase), 1)-1)))-0.000059));
-//                return number_format(($valor * $juroBase),2,'.','');
-//            }
-//        }
-//        return $juro;
-//    }
+
     public function trataValor($valor){
         if (substr_count($valor, ',') == 0){
             return $valor;
@@ -483,6 +473,23 @@ class r2data {
             }
             return str_replace(',','.',$valor);
         }
+    }
+
+    public function calcularNumeroMeses($dataInicial, $dataFinal) {
+        $hoje = new \DateTime();
+        if($this->isDataBrasileira($dataInicial))
+            $dataInicial = $this->converteData($dataInicial);
+        if($this->isDataBrasileira($dataFinal))
+            $dataFinal = $this->converteData($dataFinal);
+        if ($dataInicial <= $hoje->format('Y-m-d')) {
+            $inicio = $hoje;
+        } else {
+            $inicio = new \DateTime($dataInicial);
+        }
+        $fim = new \DateTime($dataFinal);
+        $intervalo = $inicio->diff($fim);
+        $totalMeses = ($intervalo->y * 12) + $intervalo->m;
+        return floor($totalMeses);
     }
 }
 

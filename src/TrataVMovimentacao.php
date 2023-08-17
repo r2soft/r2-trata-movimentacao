@@ -4,6 +4,8 @@ namespace R2Soft\VMovimentacao;
 
 use Exception;
 use R2Soft\VMovimentacao\DB\Conexao;
+use PDO;
+
 
 class TrataVMovimentacao
 {
@@ -37,7 +39,34 @@ class TrataVMovimentacao
     private $empresaId = null;
     private $jurosMulta=0;
     private $valuesPorTipoParcela = array();
+    private $dataBaseValorPresente=null;
 
+    public function __construct($vendaId=null)
+    {
+        $conn = Conexao::getInstance();
+        $stmt = $conn->prepare('SELECT id FROM nucleo.empresas');
+        $stmt->execute();
+        $empresa = $stmt->fetch(\PDO::FETCH_ASSOC );
+        $this->empresaId = $empresa['id'];
+        if($vendaId && $this->empresaId == 943){
+            $stmt = $conn->prepare("select min(data_vencimento) from nucleo.v_movimentacoes_resumo_financiero WHERE venda_id = $vendaId and  tipo_movimentacao != 'movsaida' and identificacao = 1 group by venda_id");
+            $stmt->execute();
+            $this->minDataSaldoDevedor = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $this->minDataSaldoDevedor = $this->minDataSaldoDevedor[0]['min'];
+            $this->setDataBaseValorPresente($this->minDataSaldoDevedor);
+        }
+    }
+
+
+    public function getDataBaseValorPresente()
+    {
+        return $this->dataBaseValorPresente;
+    }
+
+    public function setDataBaseValorPresente($dataBaseValorPresente)
+    {
+        $this->dataBaseValorPresente = $dataBaseValorPresente;
+    }
     /**
      * @return int
      */
@@ -71,7 +100,8 @@ class TrataVMovimentacao
      */
     public function setMovimentacao($movimentacao)
     {
-//        debug($movimentacao);exit;
+
+
         if (isset($movimentacao['VMovimentacao']))
             $this->movimentacao = $movimentacao['VMovimentacao'];
         else
@@ -84,22 +114,17 @@ class TrataVMovimentacao
             $this->price = new price();
 
         $this->setDadosDaVenda($this->movimentacao['venda_id']);
-
         $atualizacao = $this->getAtualizacao();
 
-        $this->valorAtualizadoTotal += $this->getValorDaMovimentacaoAtualizado();
+        $this->valorAtualizadoTotal += $this->getValorDaMovimentacaoAtualizado($this->getDataBaseValorPresente());
         $this->valorDescontoTotal += $this->getDesconto();
         $this->valorJuroAtualizadoTotal += $atualizacao['juros'] ?: $this->movimentacao['juro_total'];
-
         if($atualizacao['multa'] == 0 and $this->movimentacao['dias_atraso'] > 0) {
             $this->multaTotal += $atualizacao['multa'] ?: $this->movimentacao['multa_calculada'];
         }
-
         $this->atualizacaoTotal += $atualizacao['valor_atualizado'];
         $this->valorTotal += $this->getValor();
-
         $dataVencimento = $this->movimentacao['data_prorogacao_antecipacao'] == null ? $this->movimentacao['data_vencimento'] : $this->movimentacao['data_prorogacao_antecipacao'];
-
         $today = strtotime(date('Y-m-d'));
         $dataVencimento = strtotime($dataVencimento);
 
@@ -307,11 +332,11 @@ class TrataVMovimentacao
 
     private function getValorSeMovimentacaoDeReceita()
     {
+        $identificacoesPermitidas = array(1, 2, 3, 4,6);
+        if (in_array($this->movimentacao['identificacao'], $identificacoesPermitidas)) {
 
-
-        if ($this->movimentacao['identificacao'] == 1 || $this->movimentacao['identificacao'] == 2 ||
-            $this->movimentacao['identificacao'] == 3 || $this->movimentacao['identificacao'] == 4) {
             if (empty($this->movimentacao['data_credito'])) {
+
                 if ($this->dadosDaVenda['termos_antecipados']) {
                     $periodos = $this->r2data->getPeriodosTermosAntecipados($this->movimentacao['data_vencimento']);
                     $valor = $this->price->getValorPresenteDaParcela($this->movimentacao['valor'], $this->dadosDaVenda['juro_aplicado'], $periodos);
@@ -322,7 +347,9 @@ class TrataVMovimentacao
                         $valor = $this->movimentacao['valor'] + $this->movimentacao['juro'] + $this->movimentacao['desconto'];
                         $this->valorParaQuitacao['valor_sem_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'];
                     } else {
-                        $periodos = $this->r2data->getPeriodosTermosVencidos($this->movimentacao['data_vencimento']);
+//                        debug($this->movimentacao['data_vencimento']);
+//                        debug($dataBaseValorPresente);exit;
+                        $periodos = $this->r2data->getPeriodosTermosVencidos($this->movimentacao['data_vencimento'], $this->getDataBaseValorPresente());
                         switch ($this->empresaId){
                             case 211:
                                 $mip = $this->movimentacao['valor']*0.025052;
@@ -335,10 +362,11 @@ class TrataVMovimentacao
                                 $valor = $this->price->getValorPresenteDaParcela($this->movimentacao['valor_inicial'], $this->dadosDaVenda['juro_aplicado'], $periodos);
                                 break;
                             case 943:
-                                if($this->movimentacao['identificacao']!=1)
-                                    $valor = $this->price->getValorPresenteDaParcela($this->movimentacao['valor_inicial'], 0, $periodos);
-                                else
-                                    $valor = $this->price->getValorPresenteDaParcela($this->movimentacao['valor_inicial'], $this->dadosDaVenda['juro_aplicado'], $periodos);
+                                if($this->movimentacao['identificacao']!=1){
+                                    $valor = $this->price->getValorPresenteDaParcela($this->movimentacao['valor'], 0, $periodos);
+                                }else{
+                                    $valor = $this->price->getValorPresenteDaParcela($this->movimentacao['valor'], $this->dadosDaVenda['juro_aplicado'], $periodos);
+                                }
                                 break;
                             default:
                                 $valor = $this->price->getValorPresenteDaParcela($this->movimentacao['valor'], $this->dadosDaVenda['juro_aplicado'], $periodos);
@@ -351,6 +379,7 @@ class TrataVMovimentacao
                 $this->setValorNoPrazo();
 
                 $this->valorParaQuitacao['valor_com_juro'] += $valor;
+//                debug($this->valorParaQuitacao['valor_com_juro']);
 
             } else {
                 $this->setValorQuitadas();
@@ -375,6 +404,7 @@ class TrataVMovimentacao
 
     public function getValorDaMovimentacaoAtualizado()
     {
+
         if ($this->getDiasAtraso() > 0) {
             return $this->getValorSeAtrasado();
         } else {
@@ -611,12 +641,6 @@ class TrataVMovimentacao
             }else{
                 $this->dadosDaVenda['valor_venda_sem_juro'] = 0;
             }
-
-            $stmt = $conn->prepare('SELECT id FROM nucleo.empresas');
-            $stmt->execute();
-            $empresa = $stmt->fetch(\PDO::FETCH_ASSOC );
-            $this->empresaId = $empresa['id'];
-
             $this->dadosDaVenda['mip'] = $this->movimentacao['valor'] * 0.025052;
             $this->dadosDaVenda['adm'] = $this->movimentacao['valor'] * 0.00926;
 
@@ -953,7 +977,6 @@ class TrataVMovimentacao
                 'ano'=>$dateVencimento->format('Y')
             );
         }
-//        debug($meses);exit;
         return $meses;
     }
 }

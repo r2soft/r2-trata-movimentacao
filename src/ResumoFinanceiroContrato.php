@@ -9,8 +9,7 @@ class ResumoFinanceiroContrato
     private $movimentacoes;
     private $trataVMovimentacaoR=null;
     private $tipoParcelasId=null;
-
-
+    
     public function __construct($vendaId, $diversas=false)
     {
         $conn = Conexao::getInstance();
@@ -24,13 +23,12 @@ class ResumoFinanceiroContrato
             $this->tipoParcelasId = join (',', $tipoParcelas);
         }
         if(empty($this->trataVMovimentacaoR))
-            $this->trataVMovimentacaoR = new TrataVMovimentacao();
-        $stmt = $conn->prepare("select * from nucleo.v_movimentacoes_resumo_financiero WHERE venda_id = $vendaId and  tipo_movimentacao != 'movsaida' and tipo_parcela_id in($this->tipoParcelasId) ");
+            $this->trataVMovimentacaoR = new TrataVMovimentacao($vendaId);
+        $stmt = $conn->prepare("select * from nucleo.v_movimentacoes_resumo_financiero WHERE venda_id = $vendaId and  tipo_movimentacao != 'movsaida' and tipo_parcela_id in($this->tipoParcelasId) order by data_vencimento");
         $stmt->execute();
         $this->movimentacoes = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $this->processaDados();
     }
-
     private function processaDados(){
         foreach ($this->movimentacoes as $index => $movimentacao) {
             $vMovimentacao['VMovimentacao'] = (array)$movimentacao;
