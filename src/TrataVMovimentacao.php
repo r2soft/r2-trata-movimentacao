@@ -48,6 +48,7 @@ class TrataVMovimentacao
         $stmt->execute();
         $empresa = $stmt->fetch(\PDO::FETCH_ASSOC );
         $this->empresaId = $empresa['id'];
+
         if($vendaId && $this->empresaId == 943){
             $stmt = $conn->prepare("select min(data_vencimento) from nucleo.v_movimentacoes_resumo_financiero WHERE venda_id = $vendaId and  tipo_movimentacao != 'movsaida' and identificacao = 1 group by venda_id");
             $stmt->execute();
@@ -234,6 +235,8 @@ class TrataVMovimentacao
 
     private function getOrdemAgrupamentos()
     {
+        if(empty($this->movimentacao['venda_id']))
+            $this->movimentacao['venda_id'] = key($this->vendaIdAtual);
         $ordemAgrupamento = $this->getOrdemMovimentacoesAgupradas($this->movimentacao['venda_id']);
         unset($objAgrupadas);
         return $ordemAgrupamento;
@@ -641,8 +644,11 @@ class TrataVMovimentacao
             }else{
                 $this->dadosDaVenda['valor_venda_sem_juro'] = 0;
             }
-            $this->dadosDaVenda['mip'] = $this->movimentacao['valor'] * 0.025052;
-            $this->dadosDaVenda['adm'] = $this->movimentacao['valor'] * 0.00926;
+            if(!empty($this->movimentacao)){
+                $this->dadosDaVenda['mip'] = $this->movimentacao['valor'] * 0.025052;
+                $this->dadosDaVenda['adm'] = $this->movimentacao['valor'] * 0.00926;
+            }
+
 
         }
         if (empty($this->vendaIdAtual[$vendaId])) {
