@@ -9,7 +9,7 @@ class ResumoFinanceiroContrato
     private $movimentacoes;
     private $trataVMovimentacaoR=null;
     private $tipoParcelasId=null;
-    
+
     public function __construct($vendaId, $diversas=false)
     {
         $conn = Conexao::getInstance();
@@ -64,10 +64,5 @@ class ResumoFinanceiroContrato
     public function getValorAReceber()
     {
         return $this->trataVMovimentacaoR->getValorAReceber();
-    }
-
-    public function getValuesPorTipoParcela()
-    {
-        return $this->trataVMovimentacaoR->getValuesPorTipoParcela();
     }
 }
