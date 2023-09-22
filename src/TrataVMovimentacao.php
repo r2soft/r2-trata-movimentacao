@@ -108,7 +108,6 @@ class TrataVMovimentacao
         else
             throw new Exception("Dados incorretos! a Movimentacao deve ter a chave 'VMovimentacao'");
 
-
         if (!$this->r2data instanceof r2data)
             $this->r2data = new r2data();
         if (!$this->price instanceof price)
@@ -136,14 +135,14 @@ class TrataVMovimentacao
         } else {
             $valorAReceber = $this->movimentacao['valor'];
             if ($today > $dataVencimento && !isset($dataPagamento)) {
-                $valorAReceberComJuroMulta = $this->movimentacao['valor'] + ($atualizacao['multa'] ?: $this->movimentacao['multa_calculada']) + ($atualizacao['juros'] ?: $this->movimentacao['juro_total']);
+                $valorAReceberComJuroMulta = $this->getValorDaMovimentacaoAtualizado();
             } else {
-                $valorAReceberComJuroMulta = $this->movimentacao['valor'];
+                $valorAReceberComJuroMulta = $this->getValor();
             }
         }
 
         if ($today > $dataVencimento && !isset($dataPagamento)) {
-            $valorAtrasadoComJurosMulta = $this->movimentacao['valor'] + ($atualizacao['multa'] ?: $this->movimentacao['multa_calculada']) + ($atualizacao['juros'] ?: $this->movimentacao['juro_total']);
+            $valorAtrasadoComJurosMulta = $this->getValorDaMovimentacaoAtualizado();
             $valorAtrasado = $this->movimentacao['valor'];
         }
 
@@ -350,8 +349,6 @@ class TrataVMovimentacao
                         $valor = $this->movimentacao['valor'] + $this->movimentacao['juro'] + $this->movimentacao['desconto'];
                         $this->valorParaQuitacao['valor_sem_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'];
                     } else {
-//                        debug($this->movimentacao['data_vencimento']);
-//                        debug($dataBaseValorPresente);exit;
                         $periodos = $this->r2data->getPeriodosTermosVencidos($this->movimentacao['data_vencimento'], $this->getDataBaseValorPresente());
                         switch ($this->empresaId){
                             case 211:
@@ -382,8 +379,6 @@ class TrataVMovimentacao
                 $this->setValorNoPrazo();
 
                 $this->valorParaQuitacao['valor_com_juro'] += $valor;
-//                debug($this->valorParaQuitacao['valor_com_juro']);
-
             } else {
                 $this->setValorQuitadas();
                 $valor = $this->movimentacao['valor'] + $this->movimentacao['juro'] + $this->movimentacao['desconto'];
