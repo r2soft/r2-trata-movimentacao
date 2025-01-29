@@ -269,8 +269,10 @@ class TrataVMovimentacao
                         $valor = $this->movimentacao['valor'] + $this->movimentacao['juro'] + $this->movimentacao['desconto'];
                         $this->valorParaQuitacao['valor_sem_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'];
                     } else {
-//                        debug($this->movimentacao['data_vencimento']);
-//                        debug($dataBaseValorPresente);exit;
+
+                        if(!empty($this->movimentacao['juro_financiamento'])){
+                            $this->dadosDaVenda['juro_aplicado'] = ($this->movimentacao['juro_financiamento']/100);
+                        }
                         $periodos = $this->r2data->getPeriodosTermosVencidos($this->movimentacao['data_vencimento'], $this->getDataBaseValorPresente());
                         switch ($this->empresaId){
                             case 211:
