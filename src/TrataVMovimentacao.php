@@ -259,7 +259,7 @@ class TrataVMovimentacao
 
             if (empty($this->movimentacao['data_credito'])) {
                 if(!empty($this->movimentacao['juro_financiamento'])){
-                    $this->dadosDaVenda['juro_aplicado'] = ($this->movimentacao['juro_financiamento']/100);
+                    $this->dadosDaVenda['juro_aplicado'] = ($this->movimentacao['juro_financiamento']);
                 }
                 if ($this->dadosDaVenda['termos_antecipados']) {
                     $periodos = $this->r2data->getPeriodosTermosAntecipados($this->movimentacao['data_vencimento']);
