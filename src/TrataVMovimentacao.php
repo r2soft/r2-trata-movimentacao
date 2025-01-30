@@ -258,7 +258,9 @@ class TrataVMovimentacao
         if (in_array($this->movimentacao['identificacao'], $identificacoesPermitidas)) {
 
             if (empty($this->movimentacao['data_credito'])) {
-
+                if(!empty($this->movimentacao['juro_financiamento'])){
+                    $this->dadosDaVenda['juro_aplicado'] = ($this->movimentacao['juro_financiamento']/100);
+                }
                 if ($this->dadosDaVenda['termos_antecipados']) {
                     $periodos = $this->r2data->getPeriodosTermosAntecipados($this->movimentacao['data_vencimento']);
                     $valor = $this->price->getValorPresenteDaParcela($this->movimentacao['valor'], $this->dadosDaVenda['juro_aplicado'], $periodos);
@@ -270,9 +272,6 @@ class TrataVMovimentacao
                         $this->valorParaQuitacao['valor_sem_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'];
                     } else {
 
-                        if(!empty($this->movimentacao['juro_financiamento'])){
-                            $this->dadosDaVenda['juro_aplicado'] = ($this->movimentacao['juro_financiamento']/100);
-                        }
                         $periodos = $this->r2data->getPeriodosTermosVencidos($this->movimentacao['data_vencimento'], $this->getDataBaseValorPresente());
                         switch ($this->empresaId){
                             case 211:
