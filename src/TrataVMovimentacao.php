@@ -258,7 +258,7 @@ class TrataVMovimentacao
         if (in_array($this->movimentacao['identificacao'], $identificacoesPermitidas)) {
 
             if (empty($this->movimentacao['data_credito'])) {
-                if(!empty($this->movimentacao['juro_financiamento'])){
+                if(!empty($this->movimentacao['juro_financiamento']) and $this->movimentacao['juro_financiamento'] > 0){
                     $this->dadosDaVenda['juro_aplicado'] = ($this->movimentacao['juro_financiamento']);
                 }
                 if ($this->dadosDaVenda['termos_antecipados']) {
