@@ -21,6 +21,7 @@ class Conexao {
     public static $user = '';
     public static $password = '';
 
+    public static $port = '5432';
     /*
      * Escondendo o construtor da classe
      */
@@ -37,7 +38,7 @@ class Conexao {
         if (!isset(self::$pdo)) {
             try {
 
-                self::$pdo = new \PDO("pgsql:host=" . self::$host . "; dbname=" . self::$dbName . "; ",self::$user, self::$password);
+                self::$pdo = new \PDO("pgsql:dbname=" . self::$dbName . "; user=".self::$user."; password=".self::$password."; host=" . self::$host . "; port=" . self::$port . "");
 
             } catch (\PDOException $e) {
                 print "Erro: " . $e->getMessage();
