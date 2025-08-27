@@ -29,6 +29,24 @@ class TrataVMovimentacao
     private $atualizacaoTotal =0;
     private $valorAtrasadas = array('quantidade' => 0, 'valor_sem_juro' => 0, 'juro' => 0, 'valor_com_juro' => 0, 'desconto' => 0, 'multa' => 0, 'juro_sem_multa' => 0);
     private $valorQuitadas = array('quantidade' => 0, 'valor_sem_juro' => 0, 'juro' => 0, 'valor_com_juro' => 0, 'desconto' => 0);
+    private $valorEntradas = array(
+        'quantidade' => 0,
+        'quantidade_total'=>0,
+        'valor_sem_juro' => 0,
+        'juro' => 0,
+        'valor_com_juro' => 0,
+        'desconto' => 0,
+        'multa' => 0,
+        'juro_sem_multa' => 0,
+        'atrasadas' => [
+            'quantidade' => 0,
+            'valor_com_juro' => 0
+        ],
+        'pagas' => [
+            'quantidade' => 0,
+            'valor_com_juro' => 0
+        ]
+    );
     private $valorNoPrazo = array('quantidade' => 0, 'valor_sem_juro' => 0, 'juro' => 0, 'valor_com_juro' => 0, 'desconto' => 0);
     private $valorParaQuitacao = array('valor_sem_juro' => 0, 'valor_com_juro' => 0);
     private $JuroMultaAtrasadas = 0;
@@ -39,6 +57,12 @@ class TrataVMovimentacao
     private $empresaId = null;
     private $jurosMulta=0;
     private $dataBaseValorPresente=null;
+    private $identificacaoEntrada = [2,3];
+    private $inclirEntrada=true;
+
+    public function setIncluirEntrada($incluirEntrada){
+        $this->inclirEntrada = $incluirEntrada;
+    }
 
     public function __construct($vendaId=null)
     {
@@ -227,6 +251,7 @@ class TrataVMovimentacao
                         $juro = $this->movimentacao['juro'] + $this->getJuroDaParcelaVencida() + $this->movimentacao['multa_calculada'] + $this->movimentacao['desconto'];
                     } else
                         $juro = $this->movimentacao['juro'] + $this->getJuroDaParcelaVencida() + $this->movimentacao['desconto'];
+                    $this->setValorEntradas();
                     if($atualizacao['valor_atualizado']>0){
                         $this->setValorAtrasadas($this->movimentacao['valor']-$atualizacao['valor_atualizado']);
                         return $atualizacao['valor_atualizado'];
@@ -236,6 +261,7 @@ class TrataVMovimentacao
                     }
 
                 }
+
                 return $this->movimentacao['valor_pago'];
             }
         } catch (\Exception $e) {
@@ -255,9 +281,11 @@ class TrataVMovimentacao
     private function getValorSeMovimentacaoDeReceita()
     {
         $identificacoesPermitidas = array(1, 2, 3, 4,6);
-        if (in_array($this->movimentacao['identificacao'], $identificacoesPermitidas)) {
 
+        if (in_array($this->movimentacao['identificacao'], $identificacoesPermitidas)) {
+            $this->setValorEntradas();
             if (empty($this->movimentacao['data_credito'])) {
+
                 if(!empty($this->movimentacao['juro_financiamento']) and $this->movimentacao['juro_financiamento'] > 0){
                     $this->dadosDaVenda['juro_aplicado'] = ($this->movimentacao['juro_financiamento']);
                 }
@@ -478,11 +506,22 @@ class TrataVMovimentacao
      */
     private function setValorQuitadas()
     {
-        $this->valorQuitadas['valor_sem_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'];
-        $this->valorQuitadas['juro'] += $this->movimentacao['juro'];
-        $this->valorQuitadas['desconto'] += $this->movimentacao['desconto'];
-        $this->valorQuitadas['valor_com_juro'] += $this->movimentacao['valor'] + $this->movimentacao['juro'] + $this->movimentacao['desconto'];
-        $this->valorQuitadas['quantidade'] += 1;
+        if(!$this->inclirEntrada){
+            if( !in_array($this->movimentacao['identificacao'],$this->identificacaoEntrada)) {
+                $this->valorQuitadas['valor_sem_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'];
+                $this->valorQuitadas['juro'] += $this->movimentacao['juro'];
+                $this->valorQuitadas['desconto'] += $this->movimentacao['desconto'];
+                $this->valorQuitadas['valor_com_juro'] += $this->movimentacao['valor'] + $this->movimentacao['juro'] + $this->movimentacao['desconto'];
+                $this->valorQuitadas['quantidade'] += 1;
+            }
+        }else{
+            $this->valorQuitadas['valor_sem_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'];
+            $this->valorQuitadas['juro'] += $this->movimentacao['juro'];
+            $this->valorQuitadas['desconto'] += $this->movimentacao['desconto'];
+            $this->valorQuitadas['valor_com_juro'] += $this->movimentacao['valor'] + $this->movimentacao['juro'] + $this->movimentacao['desconto'];
+            $this->valorQuitadas['quantidade'] += 1;
+        }
+
     }
 
     /**
@@ -498,11 +537,22 @@ class TrataVMovimentacao
      */
     private function setValorNoPrazo()
     {
-        $this->valorNoPrazo['valor_sem_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'];
-        $this->valorNoPrazo['juro'] += $this->movimentacao['juro'];
-        $this->valorNoPrazo['desconto'] += $this->movimentacao['desconto'];
-        $this->valorNoPrazo['valor_com_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'] + $this->movimentacao['juro'];
-        $this->valorNoPrazo['quantidade'] += 1;
+        if(!$this->inclirEntrada){
+            if( !in_array($this->movimentacao['identificacao'],$this->identificacaoEntrada)) {
+                $this->valorNoPrazo['valor_sem_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'];
+                $this->valorNoPrazo['juro'] += $this->movimentacao['juro'];
+                $this->valorNoPrazo['desconto'] += $this->movimentacao['desconto'];
+                $this->valorNoPrazo['valor_com_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'] + $this->movimentacao['juro'];
+                $this->valorNoPrazo['quantidade'] += 1;
+            }
+        }else{
+            $this->valorNoPrazo['valor_sem_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'];
+            $this->valorNoPrazo['juro'] += $this->movimentacao['juro'];
+            $this->valorNoPrazo['desconto'] += $this->movimentacao['desconto'];
+            $this->valorNoPrazo['valor_com_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'] + $this->movimentacao['juro'];
+            $this->valorNoPrazo['quantidade'] += 1;
+        }
+
     }
 
     /**
@@ -904,5 +954,44 @@ class TrataVMovimentacao
             );
         }
         return $meses;
+    }
+    public function getValorEntrada()
+    {
+        return $this->valorEntradas;
+
+    }
+
+    /**
+     * Soma os valores de entrada (identificacao 2 e 3)
+     * em $this->valorEntradas
+     *
+     * @return void
+     */
+    private function setValorEntradas()
+    {
+        if( in_array($this->movimentacao['identificacao'],$this->identificacaoEntrada)){
+            $juro=0;
+            if ($this->movimentacao['dias_atraso']>'0' and $this->movimentacao['data_credito']=='') {
+                $this->valorEntradas['atrasadas']['valor_com_juro'] += ($this->movimentacao['valor']
+                    + $this->movimentacao['juro']
+                    + $this->movimentacao['multa_calculada']
+                    + $this->movimentacao['juro_total']
+                    + $this->movimentacao['desconto']);
+                $this->valorEntradas['atrasadas']['quantidade'] += 1;
+            }elseif(!empty($this->movimentacao['data_credito'])){
+                $this->valorEntradas['pagas']['valor_com_juro'] += ($this->movimentacao['valor']
+                    + $this->movimentacao['juro']
+                    + $this->movimentacao['desconto']);
+                $this->valorEntradas['pagas']['quantidade'] += 1;
+            }else{
+                $this->valorEntradas['valor_sem_juro'] += $this->movimentacao['valor'] + $this->movimentacao['desconto'];
+                $this->valorEntradas['juro'] += $this->movimentacao['juro'];
+                $this->valorEntradas['desconto'] += $this->movimentacao['desconto'];
+                $this->valorEntradas['valor_com_juro'] += ($this->movimentacao['valor'] + $this->movimentacao['juro'] + $this->movimentacao['juro_total'] + $this->movimentacao['desconto']);
+                $this->valorEntradas['quantidade'] += 1;
+            }
+            if(!$this->inclirEntrada)
+                $this->valorEntradas['quantidade_total'] += 1;
+        }
     }
 }

@@ -10,8 +10,9 @@ class ResumoFinanceiroContrato
     private $trataVMovimentacaoR=null;
     private $tipoParcelasId=null;
 
-    public function __construct($vendaId, $diversas=false)
+    public function __construct($vendaId, $diversas=false, $incluirEntrada=true)
     {
+
         $conn = Conexao::getInstance();
         if(empty($this->tipoParcelasId)){
             if($diversas)
@@ -24,6 +25,7 @@ class ResumoFinanceiroContrato
         }
         if(empty($this->trataVMovimentacaoR))
             $this->trataVMovimentacaoR = new TrataVMovimentacao($vendaId);
+        $this->trataVMovimentacaoR->setIncluirEntrada($incluirEntrada);
         $stmt = $conn->prepare("select * from nucleo.v_movimentacoes_resumo_financiero WHERE venda_id = $vendaId and  tipo_movimentacao != 'movsaida' and tipo_parcela_id in($this->tipoParcelasId) order by data_vencimento");
         $stmt->execute();
         $this->movimentacoes = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -65,4 +67,10 @@ class ResumoFinanceiroContrato
     {
         return $this->trataVMovimentacaoR->getValorAReceber();
     }
+
+    public function getValorEntrada()
+    {
+        return $this->trataVMovimentacaoR->getValorEntrada();
+    }
+
 }
