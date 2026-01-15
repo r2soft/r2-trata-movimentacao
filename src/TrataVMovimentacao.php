@@ -224,9 +224,8 @@ class TrataVMovimentacao
     public function getDiasAtraso()
     {
         try {
-
             if ($this->theMovementWasPassed())
-                return $this->movimentacao['dias_atraso'];
+                return isset($this->movimentacao['agrupada']) && $this->movimentacao['agrupada'] ? 0 : ($this->movimentacao['dias_atraso'] ?? 0);
         } catch (\Exception $e) {
             return $e;
         }
