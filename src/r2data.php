@@ -65,7 +65,7 @@ class r2data {
         return $rstData;
     }
 
-    public function adicionaMesesAUmaData($data, $qtdMeses = integer) {
+    public function adicionaMesesAUmaData($data, $qtdMeses = 0) {
         if ($data != null){
             $dataRef = explode("/", $data);
             if(checkdate ( $dataRef[1], $dataRef[0], $dataRef[2])){
@@ -79,7 +79,7 @@ class r2data {
 
     }
 
-    public function subtraiMesesAUmaData($data, $qtdMeses = integer) {
+    public function subtraiMesesAUmaData($data, $qtdMeses = 0) {
         if ($data != null){
             $dataRef = explode("/", $data);
             if(checkdate ( $dataRef[1], $dataRef[0], $dataRef[2])){
@@ -269,7 +269,7 @@ class r2data {
         $price = new price();
         $periodos = $this->getPeriodosTermosAntecipados($movimentacao['0']['data_vencimento']);
 //        $valor = $price->getValorPresenteDaParcela($movimentacao['0']['valor'], $juroAplicadoNoContrato, $periodos);
-        $valor = $price->getValorPresenteDaParcela(($movimentacao['0']['valor'] + $movimentacao[0]['juro'] +  + $movimentacao[0]['desconto']), $juroAplicadoNoContrato, $periodos);
+        $valor = $price->getValorPresenteDaParcela(($movimentacao['0']['valor'] + $movimentacao[0]['juro'] + $movimentacao[0]['desconto']), $juroAplicadoNoContrato, $periodos);
         $valor += $movimentacao['0']['juro'];
         $result['valor_presente']= $valor;
         $result['juros_descontos']= $valor - $movimentacao['0']['valor'];
@@ -492,4 +492,3 @@ class r2data {
         return floor($totalMeses);
     }
 }
-

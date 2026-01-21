@@ -86,8 +86,8 @@ class TrataVMovimentacao
         $this->empresaId = $empresa['id'];
 
         if($vendaId && $this->empresaId == 943){
-            $stmt = $conn->prepare("select min(data_vencimento) from nucleo.v_movimentacoes_resumo_financiero WHERE venda_id = $vendaId and  tipo_movimentacao != 'movsaida' and identificacao = 1 group by venda_id");
-            $stmt->execute();
+            $stmt = $conn->prepare("select min(data_vencimento) from nucleo.v_movimentacoes_resumo_financiero WHERE venda_id = :vendaId and  tipo_movimentacao != 'movsaida' and identificacao = 1 group by venda_id");
+            $stmt->execute(array('vendaId' => $vendaId));
             $this->minDataSaldoDevedor = $stmt->fetchAll(PDO::FETCH_ASSOC);
             $this->minDataSaldoDevedor = $this->minDataSaldoDevedor[0]['min'];
             $this->setDataBaseValorPresente($this->minDataSaldoDevedor);
@@ -153,7 +153,7 @@ class TrataVMovimentacao
         $this->setDadosDaVenda($this->movimentacao['venda_id']);
         $atualizacao = $this->getAtualizacao();
 
-        $this->valorAtualizadoTotal += $this->getValorDaMovimentacaoAtualizado($this->getDataBaseValorPresente());
+        $this->valorAtualizadoTotal += $this->getValorDaMovimentacaoAtualizado();
         $this->valorDescontoTotal += $this->getDesconto();
         $this->valorJuroAtualizadoTotal += $atualizacao['juros'] ?: $this->movimentacao['juro_total'];
         if($atualizacao['multa'] == 0 and $this->movimentacao['dias_atraso'] > 0) {
@@ -772,7 +772,7 @@ class TrataVMovimentacao
 
                         }else
                             $dados1venc = $this->getDadosVencimento($this->movimentacao['data_vencimento'], true);
-                        if($nowDay=='01' && $qtd=2){
+                        if($nowDay=='01' && $qtd==2){
                             $dados1venc['dias_no_mes']=$dados1venc['dias_no_mes']+1;
                         }
                         $moraD = ($this->movimentacao['mora_dia']/100)/$dados1venc['ultimo_dia_mes'];
@@ -929,8 +929,8 @@ class TrataVMovimentacao
         $conn = Conexao::getInstance();
         $data = str_pad($mes, 4, '0', STR_PAD_LEFT);
         $data = "01/{$data}/{$ano}";
-        $stmt = $conn->prepare("SELECT valor FROM nucleo.item_correcoes where data ='{$data}'");
-        $stmt->execute();
+        $stmt = $conn->prepare("SELECT valor FROM nucleo.item_correcoes where data = :data");
+        $stmt->execute(array('data' => $data));
         $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
         if($resultado){
