@@ -225,7 +225,7 @@ class TrataVMovimentacao
     {
         try {
             if ($this->theMovementWasPassed())
-                return isset($this->movimentacao['agrupada']) && $this->movimentacao['agrupada'] ? 0 : ($this->movimentacao['dias_atraso'] ?? 0);
+                return $this->movimentacao['dias_atraso'];
         } catch (\Exception $e) {
             return $e;
         }
