@@ -501,6 +501,7 @@ class TrataVMovimentacao
             $this->valorAtrasadas['valor_com_juro'] +=  $atualizacao['valor_atualizado'];
             $this->valorParaQuitacao['valor_com_juro'] += $atualizacao['valor_atualizado'];
             if (in_array($this->movimentacao['identificacao'], $this->identificacaoEntrada)) {
+                $this->valorAtrasadas['entrada']['valor_sem_juro']=$this->movimentacao['valor'] + $this->movimentacao['desconto'];
                 $this->valorAtrasadas['entrada']['valor_com_juro']=$atualizacao['valor_atualizado'];
                 $this->valorAtrasadas['entrada']['quantidade'] += 1;
             }
@@ -511,6 +512,7 @@ class TrataVMovimentacao
             $this->valorParaQuitacao['valor_com_juro'] += $this->movimentacao['valor'] + $juro + $atualizacao['valor_atualizado'];
             $this->valorAtrasadas['juro'] += $juro;
             if (in_array($this->movimentacao['identificacao'], $this->identificacaoEntrada)) {
+                $this->valorAtrasadas['entrada']['valor_sem_juro']= $this->movimentacao['valor'] + $this->movimentacao['desconto'];
                 $this->valorAtrasadas['entrada']['valor_com_juro']= $this->movimentacao['valor'] + $juro + $atualizacao['valor_atualizado'] +$this->movimentacao['desconto'];
                 $this->valorAtrasadas['entrada']['quantidade'] += 1;
             }
@@ -605,9 +607,9 @@ class TrataVMovimentacao
         if(!$this->inclirEntrada){
             return array(
                 'quantidade' => $atrasadas['quantidade'] + $noPrazo['quantidade'] - $atrasadas['entrada']['quantidade'],
-                'valor_sem_juro' => $atrasadas['valor_sem_juro'] + $noPrazo['valor_sem_juro'],
                 'juro' => $atrasadas['juro'] + $noPrazo['juro'],
-                'valor_com_juro' => $atrasadas['valor_com_juro'] + $noPrazo['valor_com_juro']- $atrasadas['entrada']['valor_com_juro'],
+                'valor_sem_juro' => $atrasadas['valor_sem_juro'] + $noPrazo['valor_sem_juro'] - $atrasadas['entrada']['valor_sem_juro'],
+                'valor_com_juro' => $atrasadas['valor_com_juro'] + $noPrazo['valor_com_juro'] - $atrasadas['entrada']['valor_com_juro'],
                 'desconto' => $atrasadas['desconto'] + $noPrazo['desconto']
             );
         }
