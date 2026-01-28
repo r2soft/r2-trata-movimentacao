@@ -608,7 +608,7 @@ class TrataVMovimentacao
             return array(
                 'quantidade' => $atrasadas['quantidade'] + $noPrazo['quantidade'] - $atrasadas['entrada']['quantidade'],
                 'juro' => $atrasadas['juro'] + $noPrazo['juro'],
-                'valor_sem_juro' => $atrasadas['valor_sem_juro'] + $noPrazo['valor_sem_juro'] - $atrasadas['entrada']['valor_sem_juro'],
+                'valor_sem_juro' => $atrasadas['valor_sem_juro'] + $noPrazo['valor_sem_juro'] - ($atrasadas['entrada']['valor_sem_juro'] ?? 0),
                 'valor_com_juro' => $atrasadas['valor_com_juro'] + $noPrazo['valor_com_juro'] - $atrasadas['entrada']['valor_com_juro'],
                 'desconto' => $atrasadas['desconto'] + $noPrazo['desconto']
             );
