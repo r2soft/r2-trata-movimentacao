@@ -89,7 +89,7 @@ class TrataVMovimentacao
             $stmt = $conn->prepare("select min(data_vencimento) from nucleo.v_movimentacoes_resumo_financiero WHERE venda_id = :vendaId and  tipo_movimentacao != 'movsaida' and identificacao = 1 group by venda_id");
             $stmt->execute(array('vendaId' => $vendaId));
             $this->minDataSaldoDevedor = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            $this->minDataSaldoDevedor = $this->minDataSaldoDevedor[0]['min'];
+            $this->minDataSaldoDevedor = $this->minDataSaldoDevedor[0]['min'] ?? null;
             $this->setDataBaseValorPresente($this->minDataSaldoDevedor);
         }
     }

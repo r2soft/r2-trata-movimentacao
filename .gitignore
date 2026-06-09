@@ -5,3 +5,4 @@
 composer.phar
 /nbproject/private/
 nbproject/
+composer.lock
