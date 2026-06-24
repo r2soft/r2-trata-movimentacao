@@ -644,7 +644,7 @@ class TrataVMovimentacao
             }else{
                 $this->dadosDaVenda['valor_venda_sem_juro'] = 0;
             }
-            if(!empty($this->movimentacao)){
+            if(!empty($this->movimentacao['valor'])){
                 $this->dadosDaVenda['mip'] = $this->movimentacao['valor'] * 0.025052;
                 $this->dadosDaVenda['adm'] = $this->movimentacao['valor'] * 0.00926;
             }
