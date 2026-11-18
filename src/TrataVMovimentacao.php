@@ -953,6 +953,12 @@ class TrataVMovimentacao
     }
 
     private function getPeriodos($dataVencimento){
+        // getPeriodoAteHoje() so conta o mes corrente quando recebe d/m/Y (troca o dia por 01).
+        // Com Y-m-d (leitura via PDO, ex.: ResumoFinanceiroContrato) ela mantem o dia do vencimento e,
+        // se hoje for antes desse dia, perde o mes corrente: o quadro de atrasadas ficava menor que a
+        // lista de parcelas (Cake entrega d/m/Y). Normaliza para os dois caminhos contarem igual.
+        if (!strstr($dataVencimento, '/'))
+            $dataVencimento = (new \DateTime($dataVencimento))->format('d/m/Y');
         $x = $this->r2data->getPeriodoAteHoje($dataVencimento);
 
         $now = new \DateTime('now');
